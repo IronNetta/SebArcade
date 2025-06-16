@@ -22,7 +22,6 @@ export default defineNuxtConfig({
                 { hid: 'description', name: 'description', content: 'Collection de mini-jeux' }
             ],
             link: [
-                { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
                 // Police pour le style rétro des jeux
                 { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
                 { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
