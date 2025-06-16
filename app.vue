@@ -35,9 +35,9 @@
 <script setup>
 // Configuration de la page
 useHead({
-  title: '🎮 Nuxt Mini Games - Arcade Rétro',
+  title: '🎮 Mini Games - Arcade Rétro',
   meta: [
-    { name: 'description', content: 'Collection de mini-jeux rétro créés avec Nuxt.js' }
+    { name: 'description', content: 'Collection de mini-jeux rétro' }
   ]
 })
 </script>
