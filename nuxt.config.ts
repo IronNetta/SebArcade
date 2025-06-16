@@ -12,14 +12,14 @@ export default defineNuxtConfig({
 
     app: {
         head: {
-            title: '🎮 Nuxt Mini Games',
+            title: '🎮 Mini Games',
             htmlAttrs: {
                 lang: 'fr'
             },
             meta: [
                 { charset: 'utf-8' },
                 { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-                { hid: 'description', name: 'description', content: 'Collection de mini-jeux créés avec Nuxt.js' }
+                { hid: 'description', name: 'description', content: 'Collection de mini-jeux' }
             ],
             link: [
                 { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
