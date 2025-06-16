@@ -124,7 +124,7 @@
 <script setup>
 // Configuration de la page
 useHead({
-  title: '🎮 Jeux - Nuxt Arcade',
+  title: '🎮 Jeux - Seba Arcade',
   meta: [
     { name: 'description', content: 'Découvrez tous nos mini-jeux rétro' }
   ]
@@ -177,7 +177,7 @@ const games = ref([
     icon: '🚀',
     difficulty: '★★★',
     playTime: '3-8 min',
-    status: 'coming-soon',
+    status: 'available',
     route: '/games/asteroids',
     tags: ['Espace', 'Action'],
     category: 'action'
@@ -189,7 +189,7 @@ const games = ref([
     icon: '🧩',
     difficulty: '★★☆',
     playTime: '5-15 min',
-    status: 'coming-soon',
+    status: 'available',
     route: '/games/tetris',
     tags: ['Puzzle', 'Logique'],
     category: 'puzzle'
@@ -201,7 +201,7 @@ const games = ref([
     icon: '👻',
     difficulty: '★★★',
     playTime: '3-10 min',
-    status: 'coming-soon',
+    status: 'available',
     route: '/games/pacman',
     tags: ['Maze', 'Classique'],
     category: 'arcade'
@@ -223,25 +223,11 @@ const games = ref([
 // Jeux à venir avec progression
 const comingSoonGames = ref([
   {
-    id: 'space-invaders',
-    name: 'Space Invaders',
+    id: 'breakout',
+    name: 'Breakout',
     description: 'En développement actif',
-    icon: '👾',
-    progress: 75
-  },
-  {
-    id: 'asteroids',
-    name: 'Asteroids',
-    description: 'Phase de conception',
-    icon: '🚀',
-    progress: 30
-  },
-  {
-    id: 'tetris',
-    name: 'Tetris',
-    description: 'Planification en cours',
-    icon: '🧩',
-    progress: 15
+    icon: '🏓',
+    progress: 80
   }
 ])
 

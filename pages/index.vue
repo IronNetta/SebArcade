@@ -4,10 +4,10 @@
     <section class="hero">
       <div class="hero-content">
         <h1 class="hero-title retro-font">
-          <span class="neon-text">NUXT ARCADE</span>
+          <span class="neon-text">Seba ARCADE</span>
         </h1>
         <p class="hero-subtitle">
-          🎮 Collection de mini-jeux rétro créés avec Nuxt.js
+          🎮 Collection de mini-jeux rétro
         </p>
         <div class="hero-buttons">
           <NuxtLink to="/games" class="game-button">
@@ -60,47 +60,15 @@
       </div>
     </section>
 
-    <!-- Section statistiques -->
-    <section class="stats-section">
-      <h2 class="section-title retro-font neon-text">
-        Statistiques
-      </h2>
-
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon">🎮</div>
-          <div class="stat-number">{{ totalGames }}</div>
-          <div class="stat-label">Jeux Disponibles</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon">👥</div>
-          <div class="stat-number">{{ totalPlayers }}</div>
-          <div class="stat-label">Joueurs Actifs</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon">🏆</div>
-          <div class="stat-number">{{ totalScores }}</div>
-          <div class="stat-label">Scores Enregistrés</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon">⭐</div>
-          <div class="stat-number">{{ averageRating }}</div>
-          <div class="stat-label">Note Moyenne</div>
-        </div>
-      </div>
-    </section>
   </div>
 </template>
 
 <script setup>
 // Configuration de la page
 useHead({
-  title: '🎮 Nuxt Arcade - Accueil',
+  title: '🎮 Seba Arcade - Accueil',
   meta: [
-    { name: 'description', content: 'Bienvenue dans Nuxt Arcade, votre collection de mini-jeux rétro' }
+    { name: 'description', content: 'Bienvenue dans Seba Arcade, votre collection de mini-jeux rétro' }
   ]
 })
 
@@ -123,7 +91,7 @@ const games = ref([
     icon: '👾',
     difficulty: '★★★',
     playTime: '5-10 min',
-    status: 'coming-soon',
+    status: 'available',
     route: '/games/space-invaders'
   },
   {
@@ -133,7 +101,7 @@ const games = ref([
     icon: '🚀',
     difficulty: '★★★',
     playTime: '3-8 min',
-    status: 'coming-soon',
+    status: 'available',
     route: '/games/asteroids'
   },
   {
@@ -143,7 +111,7 @@ const games = ref([
     icon: '🧩',
     difficulty: '★★☆',
     playTime: '5-15 min',
-    status: 'coming-soon',
+    status: 'available',
     route: '/games/tetris'
   },
   {
@@ -153,7 +121,7 @@ const games = ref([
     icon: '👻',
     difficulty: '★★★',
     playTime: '3-10 min',
-    status: 'coming-soon',
+    status: 'available',
     route: '/games/pacman'
   },
   {
@@ -195,7 +163,7 @@ const getStatusText = (status) => {
 // Animation au chargement
 onMounted(() => {
   // Ajouter des animations ou effets spéciaux
-  console.log('🎮 Nuxt Arcade chargé!')
+  console.log('🎮 Seba Arcade chargé!')
 })
 </script>
 

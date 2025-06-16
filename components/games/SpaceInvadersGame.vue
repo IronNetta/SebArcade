@@ -150,6 +150,11 @@
 </template>
 
 <script setup>
+// Import manuel des composables depuis le dossier games/
+import { useScore } from '~/composables/games/useScore'
+import { useKeyboard } from '~/composables/games/useKeyboard'
+import { useGameLoop } from '~/composables/games/useGameLoop'
+
 // Configuration du jeu
 const canvasWidth = 600
 const canvasHeight = 500
@@ -211,7 +216,7 @@ function updateGame(deltaTime) {
   updatePlayer(deltaTime)
   updateBullets(deltaTime)
   updateAliens(deltaTime)
-  updateAlienBullets(deltaTime)
+  // updateAlienBullets(deltaTime) - Cette fonction est déjà incluse dans updateBullets
   updateExplosions(deltaTime)
 
   // Vérifications

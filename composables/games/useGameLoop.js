@@ -11,7 +11,7 @@ export const useGameLoop = (updateFunction, fps = 60) => {
     let fpsLastTime = 0
 
     // Calculer l'intervalle de frame souhaité
-    const targetFrameTime = 1000 / fps
+    const targetFrameTime = 500 / fps
 
     // Fonction principale de la boucle
     const gameLoop = (currentTime) => {

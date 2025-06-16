@@ -4,7 +4,7 @@
     <nav class="main-nav">
       <div class="nav-container">
         <NuxtLink to="/" class="logo">
-          <span class="neon-text">🎮 NUXT ARCADE</span>
+          <span class="neon-text">🎮 Seba ARCADE</span>
         </NuxtLink>
 
         <div class="nav-links">
@@ -23,11 +23,9 @@
     <!-- Footer -->
     <footer class="main-footer">
       <div class="footer-content">
-        <p>🚀 Créé avec Nuxt.js • 🎯 Collection de mini-jeux rétro</p>
+        <p>🎯 Collection de mini-jeux rétro</p>
         <div class="footer-links">
-          <a href="https://github.com" target="_blank" rel="noopener">GitHub</a>
-          <span>•</span>
-          <a href="https://nuxt.com" target="_blank" rel="noopener">Nuxt.js</a>
+          <a href="https://github.com/IronNetta" target="_blank" rel="noopener">GitHub</a>
         </div>
       </div>
     </footer>
