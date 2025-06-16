@@ -1,7 +1,7 @@
 {
-  "name": "nuxt-mini-games",
+  "name": "mini-games",
   "version": "1.0.0",
-  "description": "Collection de mini-jeux rétro créés avec Nuxt.js",
+  "description": "Collection de mini-jeux rétro",
   "private": true,
   "scripts": {
     "build": "nuxt build",
@@ -31,12 +31,12 @@
     "canvas"
   ],
   "author": {
-    "name": "Votre Nom",
-    "email": "votre.email@example.com"
+    "name": "De Laet Sebastien",
+    "email": "delaet.sebastien22@gmail.com"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/votre-username/nuxt-mini-games.git"
+    "url": "https://github.com/IronNetta/SebArcade"
   },
   "license": "MIT",
   "engines": {
