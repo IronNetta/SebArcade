@@ -1,4 +1,4 @@
-<template>
+b<template>
   <div class="scores-page">
     <div class="page-header">
       <h1 class="page-title retro-font neon-text">
@@ -172,7 +172,7 @@
 <script setup>
 // Configuration de la page
 useHead({
-  title: '🏆 Scores - Nuxt Arcade',
+  title: '🏆 Scores - SebArcade',
   meta: [
     { name: 'description', content: 'Consultez les meilleurs scores de tous les jeux' }
   ]
