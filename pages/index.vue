@@ -4,7 +4,7 @@
     <section class="hero">
       <div class="hero-content">
         <h1 class="hero-title retro-font">
-          <span class="neon-text">Seba ARCADE</span>
+          <span class="neon-text">SebArcade</span>
         </h1>
         <p class="hero-subtitle">
           🎮 Collection de mini-jeux rétro
@@ -66,9 +66,9 @@
 <script setup>
 // Configuration de la page
 useHead({
-  title: '🎮 Seba Arcade - Accueil',
+  title: '🎮 SebArcade - Accueil',
   meta: [
-    { name: 'description', content: 'Bienvenue dans Seba Arcade, votre collection de mini-jeux rétro' }
+    { name: 'description', content: 'Bienvenue dans SebArcade, votre collection de mini-jeux rétro' }
   ]
 })
 
@@ -163,7 +163,7 @@ const getStatusText = (status) => {
 // Animation au chargement
 onMounted(() => {
   // Ajouter des animations ou effets spéciaux
-  console.log('🎮 Seba Arcade chargé!')
+  console.log('🎮 SebArcade chargé!')
 })
 </script>
 
