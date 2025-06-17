@@ -124,7 +124,7 @@
 <script setup>
 // Configuration de la page
 useHead({
-  title: '🎮 Jeux - Seba Arcade',
+  title: '🎮 Jeux - SebArcade',
   meta: [
     { name: 'description', content: 'Découvrez tous nos mini-jeux rétro' }
   ]
