@@ -4,7 +4,7 @@
     <nav class="main-nav">
       <div class="nav-container">
         <NuxtLink to="/" class="logo">
-          <span class="neon-text">🎮 Seba ARCADE</span>
+          <span class="neon-text">🎮 SebArcade</span>
         </NuxtLink>
 
         <div class="nav-links">
@@ -25,7 +25,7 @@
       <div class="footer-content">
         <p>🎯 Collection de mini-jeux rétro</p>
         <div class="footer-links">
-          <a href="https://github.com/IronNetta" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://github.com/IronNetta/SebArcade" target="_blank" rel="noopener">GitHub</a>
         </div>
       </div>
     </footer>
