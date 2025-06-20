@@ -213,7 +213,7 @@ const games = ref([
     icon: '🏓',
     difficulty: '★★☆',
     playTime: '2-6 min',
-    status: 'coming-soon',
+    status: 'available',
     route: '/games/breakout',
     tags: ['Arcade', 'Réflexes'],
     category: 'arcade'

@@ -265,22 +265,26 @@ const keys = ref({
 
 // Fonction principale de mise à jour
 function updateGame(deltaTime) {
-  if (gameState.value !== 'playing') {
-    if (gameState.value === 'levelComplete') {
-      updateLevelComplete(deltaTime)
-    } else if (gameState.value === 'serving') {
-      updateServing(deltaTime)
-    }
-    return
+  // Mise à jour selon l'état
+  if (gameState.value === 'playing') {
+    handleInput(deltaTime)
+    updatePaddle(deltaTime)
+    updateBall(deltaTime)
+    updatePowerUps(deltaTime)
+    updateParticles(deltaTime)
+    checkCollisions()
+    checkLevelComplete()
+  } else if (gameState.value === 'levelComplete') {
+    updateLevelComplete(deltaTime)
+  } else if (gameState.value === 'serving') {
+    handleInput(deltaTime) // Permettre les contrôles pendant le serving
+    updateServing(deltaTime)
+    updateBall(deltaTime) // Pour maintenir la balle collée à la raquette
+  } else if (gameState.value === 'paused') {
+    handleInput(deltaTime) // Pour permettre de reprendre le jeu
   }
 
-  handleInput(deltaTime)
-  updatePaddle(deltaTime)
-  updateBall(deltaTime)
-  updatePowerUps(deltaTime)
-  updateParticles(deltaTime)
-  checkCollisions()
-  checkLevelComplete()
+  // Toujours dessiner, quel que soit l'état
   draw()
 }
 
@@ -395,17 +399,25 @@ function handleInput(deltaTime) {
   }
 
   if (keys.value.space) {
-    launchBall()
+    if (gameState.value === 'serving' || ball.value.stuck) {
+      launchBall()
+      keys.value.space = false // Éviter les lancements multiples
+    }
   }
 
   if (keys.value.escape) {
-    pauseGame()
+    if (gameState.value === 'playing') {
+      pauseGame()
+    } else if (gameState.value === 'paused') {
+      resumeGame()
+    }
+    keys.value.escape = false // Éviter les toggles multiples
   }
 }
 
 // Contrôle souris
 function handleMouseMove(event) {
-  if (gameState.value !== 'playing') return
+  if (gameState.value !== 'playing' && gameState.value !== 'serving') return
 
   const rect = gameCanvas.value.getBoundingClientRect()
   mouseX = event.clientX - rect.left
@@ -703,6 +715,9 @@ function checkLevelComplete() {
     levelProgress.value = 0
     ballSpeed.value += 0.5
     stopLoop()
+
+    // Redémarrer la boucle pour afficher l'écran de niveau terminé
+    startLoop()
   }
 }
 
@@ -716,7 +731,6 @@ function updateLevelComplete(deltaTime) {
     combo.value = 0
     gameState.value = 'serving'
     servingCountdown.value = 3
-    startLoop()
   }
 }
 
@@ -753,11 +767,105 @@ function draw() {
   ctx.fillStyle = gradient
   ctx.fillRect(0, 0, canvasWidth, canvasHeight)
 
-  drawBricks()
-  drawPaddle()
-  drawBall()
-  drawPowerUps()
-  drawParticles()
+  // Dessiner selon l'état du jeu
+  if (gameState.value === 'playing' || gameState.value === 'serving' || gameState.value === 'paused') {
+    drawBricks()
+    drawPaddle()
+    drawBall()
+    drawPowerUps()
+    drawParticles()
+
+    // Affichage du compte à rebours en mode serving
+    if (gameState.value === 'serving' && servingCountdown.value > 0) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight)
+
+      ctx.fillStyle = '#ffffff'
+      ctx.font = '48px Arial'
+      ctx.textAlign = 'center'
+      ctx.fillText(Math.ceil(servingCountdown.value).toString(), canvasWidth / 2, canvasHeight / 2)
+
+      ctx.font = '16px Arial'
+      ctx.fillText('Appuyez sur ESPACE pour lancer la balle', canvasWidth / 2, canvasHeight / 2 + 60)
+    }
+
+    // Affichage du message de pause
+    if (gameState.value === 'paused') {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight)
+
+      ctx.fillStyle = '#ffffff'
+      ctx.font = '32px Arial'
+      ctx.textAlign = 'center'
+      ctx.fillText('PAUSE', canvasWidth / 2, canvasHeight / 2)
+
+      ctx.font = '16px Arial'
+      ctx.fillText('Appuyez sur P ou Échap pour reprendre', canvasWidth / 2, canvasHeight / 2 + 40)
+    }
+  } else if (gameState.value === 'levelComplete') {
+    drawBricks()
+    drawPaddle()
+    drawBall()
+
+    // Écran de niveau terminé
+    ctx.fillStyle = 'rgba(0, 100, 0, 0.8)'
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight)
+
+    ctx.fillStyle = '#ffffff'
+    ctx.font = '32px Arial'
+    ctx.textAlign = 'center'
+    ctx.fillText(`Niveau ${level.value - 1} Terminé !`, canvasWidth / 2, canvasHeight / 2 - 40)
+
+    ctx.font = '18px Arial'
+    ctx.fillText(`Bonus : ${levelBonus.value} points`, canvasWidth / 2, canvasHeight / 2)
+
+    // Barre de progression
+    const barWidth = 200
+    const barHeight = 20
+    const barX = (canvasWidth - barWidth) / 2
+    const barY = canvasHeight / 2 + 30
+
+    ctx.strokeStyle = '#ffffff'
+    ctx.strokeRect(barX, barY, barWidth, barHeight)
+
+    ctx.fillStyle = '#00ff00'
+    ctx.fillRect(barX, barY, (barWidth * levelProgress.value) / 100, barHeight)
+  } else if (gameState.value === 'gameOver') {
+    // Écran de game over
+    ctx.fillStyle = 'rgba(100, 0, 0, 0.8)'
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight)
+
+    ctx.fillStyle = '#ffffff'
+    ctx.font = '32px Arial'
+    ctx.textAlign = 'center'
+    ctx.fillText('GAME OVER', canvasWidth / 2, canvasHeight / 2 - 40)
+
+    ctx.font = '18px Arial'
+    ctx.fillText(`Score Final : ${formatScore(currentScore.value)}`, canvasWidth / 2, canvasHeight / 2)
+
+    if (isNewRecord.value) {
+      ctx.fillStyle = '#ffff00'
+      ctx.fillText('NOUVEAU RECORD !', canvasWidth / 2, canvasHeight / 2 + 30)
+    }
+
+    ctx.fillStyle = '#ffffff'
+    ctx.font = '14px Arial'
+    ctx.fillText('Cliquez sur "Recommencer" pour rejouer', canvasWidth / 2, canvasHeight / 2 + 60)
+  } else if (gameState.value === 'menu') {
+    // Écran de menu
+    ctx.fillStyle = '#ffffff'
+    ctx.font = '48px Arial'
+    ctx.textAlign = 'center'
+    ctx.fillText('🏓 BREAKOUT', canvasWidth / 2, canvasHeight / 2 - 50)
+
+    ctx.font = '18px Arial'
+    ctx.fillText('Cliquez sur "Commencer" pour jouer', canvasWidth / 2, canvasHeight / 2 + 20)
+
+    if (highScore.value > 0) {
+      ctx.font = '14px Arial'
+      ctx.fillText(`Meilleur Score : ${formatScore(highScore.value)}`, canvasWidth / 2, canvasHeight / 2 + 60)
+    }
+  }
 }
 
 function drawBricks() {
@@ -922,16 +1030,12 @@ function startGame() {
 function pauseGame() {
   if (gameState.value === 'playing') {
     gameState.value = 'paused'
-    stopLoop()
-  } else if (gameState.value === 'paused') {
-    resumeGame()
   }
 }
 
 function resumeGame() {
   if (gameState.value === 'paused') {
     gameState.value = 'playing'
-    startLoop()
     nextTick(() => {
       gameCanvas.value?.focus()
     })
@@ -942,6 +1046,28 @@ function goToMenu() {
   gameState.value = 'menu'
   stopLoop()
   showHelp.value = false
+
+  nextTick(() => {
+    if (ctx) {
+      draw()
+    }
+  })
+}
+
+function restartGame() {
+  stopLoop()
+  startGame()
+}
+
+// Gestion des clics sur le canvas
+function handleCanvasClick() {
+  if (gameState.value === 'menu') {
+    startGame()
+  } else if (gameState.value === 'gameOver') {
+    restartGame()
+  } else if (gameState.value === 'serving') {
+    launchBall()
+  }
 }
 
 // Initialisation
@@ -958,7 +1084,7 @@ onMounted(() => {
 
   nextTick(() => {
     if (ctx) {
-      drawInitialScreen()
+      draw()
     }
   })
 })
