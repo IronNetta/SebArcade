@@ -1,371 +1,637 @@
 // composables/games/useScore.js
-export const useScore = (gameId) => {
-    // État du score
-    const currentScore = ref(0)
-    const highScore = ref(0)
-    const isNewRecord = ref(false)
-    const scoreHistory = ref([])
-    const multiplier = ref(1)
-    const combo = ref(0)
-    const level = ref(1)
+import { ref, computed, readonly, onMounted, onUnmounted, watch } from 'vue'
 
-    // Configuration
-    const config = ref({
-        comboTimeout: 3000, // 3 secondes pour maintenir le combo
-        comboMultiplier: 0.1, // +10% par combo
-        levelThreshold: 1000, // Points nécessaires pour passer au niveau suivant
-        maxMultiplier: 5
+export const useScore = (gameId, options = {}) => {
+    // Configuration par défaut avec possibilité de surcharge
+    const defaultConfig = {
+        comboTimeout: 3000,
+        comboMultiplier: 0.1,
+        levelThreshold: 1000,
+        maxMultiplier: 5,
+        maxHistorySize: 100,
+        autoSave: true,
+        achievements: true,
+        analytics: true
+    }
+
+    const config = ref({ ...defaultConfig, ...options })
+
+    // État principal du score
+    const gameState = ref({
+        currentScore: 0,
+        highScore: 0,
+        totalScore: 0,
+        isNewRecord: false,
+        gameStartTime: Date.now(),
+        gameEndTime: null,
+        isGameActive: false
     })
 
-    // Timers
-    let comboTimer = null
-    let lastComboTime = 0
+    // Système de combo avancé
+    const comboState = ref({
+        count: 0,
+        multiplier: 1,
+        maxCombo: 0,
+        lastActionTime: 0,
+        timer: null,
+        streak: 0 // Actions consécutives réussies
+    })
 
-    // Charger les données sauvegardées
-    const loadSavedData = () => {
-        try {
-            // High score
-            const savedHighScore = localStorage.getItem(`${gameId}-high-score`)
-            if (savedHighScore) {
-                highScore.value = parseInt(savedHighScore)
-            }
+    // Système de niveau et progression
+    const progressState = ref({
+        level: 1,
+        xp: 0,
+        xpToNextLevel: 1000,
+        maxLevel: 1,
+        skillPoints: 0
+    })
 
-            // Historique des scores
-            const savedHistory = localStorage.getItem(`${gameId}-score-history`)
-            if (savedHistory) {
-                scoreHistory.value = JSON.parse(savedHistory)
-            }
+    // Historique et statistiques
+    const historyData = ref({
+        scores: [],
+        sessions: [],
+        achievements: new Set(),
+        stats: {
+            totalGames: 0,
+            totalPlayTime: 0,
+            averageScore: 0,
+            bestSession: null,
+            winStreak: 0,
+            currentStreak: 0
+        }
+    })
 
-            // Niveau débloqué
-            const savedLevel = localStorage.getItem(`${gameId}-max-level`)
-            if (savedLevel) {
-                level.value = parseInt(savedLevel)
+    // Performance et analytics
+    const analytics = ref({
+        actionsPerMinute: 0,
+        accuracy: 100,
+        peakPerformance: 0,
+        consistencyScore: 0,
+        improvementRate: 0
+    })
+
+    // Événements et callbacks
+    const events = ref({
+        onScoreChange: [],
+        onLevelUp: [],
+        onAchievement: [],
+        onComboBreak: [],
+        onNewRecord: []
+    })
+
+    // Utilitaires de stockage avec gestion d'erreurs robuste
+    const storage = {
+        save: (key, data) => {
+            if (!config.value.autoSave) return false
+
+            try {
+                const serialized = JSON.stringify(data)
+                localStorage.setItem(`${gameId}-${key}`, serialized)
+                return true
+            } catch (error) {
+                console.warn(`Erreur sauvegarde ${key}:`, error)
+                // Tentative de nettoyage si quota dépassé
+                if (error.name === 'QuotaExceededError') {
+                    this.cleanup()
+                    try {
+                        localStorage.setItem(`${gameId}-${key}`, JSON.stringify(data))
+                        return true
+                    } catch (retryError) {
+                        console.error('Impossible de sauvegarder après nettoyage:', retryError)
+                    }
+                }
+                return false
             }
-        } catch (error) {
-            console.warn('Erreur lors du chargement des scores:', error)
+        },
+
+        load: (key, defaultValue = null) => {
+            try {
+                const data = localStorage.getItem(`${gameId}-${key}`)
+                return data ? JSON.parse(data) : defaultValue
+            } catch (error) {
+                console.warn(`Erreur chargement ${key}:`, error)
+                return defaultValue
+            }
+        },
+
+        remove: (key) => {
+            try {
+                localStorage.removeItem(`${gameId}-${key}`)
+                return true
+            } catch (error) {
+                console.warn(`Erreur suppression ${key}:`, error)
+                return false
+            }
+        },
+
+        cleanup: () => {
+            // Nettoie les anciens scores pour libérer de l'espace
+            const scores = historyData.value.scores
+            if (scores.length > config.value.maxHistorySize) {
+                historyData.value.scores = scores
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, config.value.maxHistorySize)
+
+                this.save('scores', historyData.value.scores)
+            }
         }
     }
 
-    // Sauvegarder les données
-    const saveData = () => {
-        try {
-            localStorage.setItem(`${gameId}-high-score`, highScore.value.toString())
-            localStorage.setItem(`${gameId}-score-history`, JSON.stringify(scoreHistory.value))
-            localStorage.setItem(`${gameId}-max-level`, level.value.toString())
-        } catch (error) {
-            console.warn('Erreur lors de la sauvegarde des scores:', error)
+    // Système d'événements amélioré
+    const emit = (eventName, data) => {
+        const handlers = events.value[eventName] || []
+        handlers.forEach(handler => {
+            try {
+                handler(data)
+            } catch (error) {
+                console.error(`Erreur dans le handler ${eventName}:`, error)
+            }
+        })
+    }
+
+    const on = (eventName, handler) => {
+        if (!events.value[eventName]) {
+            events.value[eventName] = []
+        }
+        events.value[eventName].push(handler)
+
+        // Retourne une fonction pour supprimer l'écouteur
+        return () => {
+            const index = events.value[eventName].indexOf(handler)
+            if (index > -1) {
+                events.value[eventName].splice(index, 1)
+            }
         }
     }
 
-    // Ajouter des points
-    const addPoints = (points, options = {}) => {
-        if (points <= 0) return
+    // Calculs avancés de score
+    const calculatePoints = (basePoints, options = {}) => {
+        if (basePoints <= 0) return 0
 
-        const finalPoints = Math.floor(points * multiplier.value)
-        currentScore.value += finalPoints
+        let finalPoints = basePoints
+
+        // Application du multiplicateur de combo
+        finalPoints *= comboState.value.multiplier
+
+        // Bonus de niveau
+        const levelBonus = 1 + (progressState.value.level - 1) * 0.05
+        finalPoints *= levelBonus
+
+        // Bonus de précision/performance
+        if (options.accuracy) {
+            const accuracyBonus = Math.max(0.5, options.accuracy / 100)
+            finalPoints *= accuracyBonus
+        }
+
+        // Bonus de vitesse
+        if (options.speed) {
+            const speedBonus = Math.min(2, options.speed / 100)
+            finalPoints *= speedBonus
+        }
+
+        // Bonus de difficulté
+        if (options.difficulty) {
+            finalPoints *= options.difficulty
+        }
+
+        return Math.floor(finalPoints)
+    }
+
+    // Gestion avancée des combos
+    const updateCombo = (successful = true, points = 0) => {
+        const now = Date.now()
+
+        if (successful) {
+            comboState.value.count++
+            comboState.value.streak++
+            comboState.value.lastActionTime = now
+
+            // Calcul du multiplicateur avec courbe de progression
+            const baseMultiplier = 1 + (comboState.value.count * config.value.comboMultiplier)
+            const diminishingReturns = Math.pow(0.95, Math.max(0, comboState.value.count - 10))
+            comboState.value.multiplier = Math.min(
+                baseMultiplier * diminishingReturns,
+                config.value.maxMultiplier
+            )
+
+            // Mise à jour du record de combo
+            if (comboState.value.count > comboState.value.maxCombo) {
+                comboState.value.maxCombo = comboState.value.count
+            }
+
+            // Reset du timer de combo
+            if (comboState.value.timer) {
+                clearTimeout(comboState.value.timer)
+            }
+
+            comboState.value.timer = setTimeout(() => {
+                resetCombo()
+            }, config.value.comboTimeout)
+
+        } else {
+            // Combo cassé
+            const previousCombo = comboState.value.count
+            resetCombo()
+
+            if (previousCombo >= 5) {
+                emit('onComboBreak', {
+                    combo: previousCombo,
+                    pointsLost: points * 0.1
+                })
+            }
+        }
+    }
+
+    const resetCombo = () => {
+        const wasComboActive = comboState.value.count > 0
+
+        comboState.value.count = 0
+        comboState.value.multiplier = 1
+        comboState.value.streak = 0
+        comboState.value.lastActionTime = 0
+
+        if (comboState.value.timer) {
+            clearTimeout(comboState.value.timer)
+            comboState.value.timer = null
+        }
+
+        if (wasComboActive) {
+            emit('onComboBreak', { combo: 0 })
+        }
+    }
+
+    // Système de niveau et XP
+    const addExperience = (xp) => {
+        progressState.value.xp += xp
+
+        while (progressState.value.xp >= progressState.value.xpToNextLevel) {
+            levelUp()
+        }
+    }
+
+    const levelUp = () => {
+        progressState.value.xp -= progressState.value.xpToNextLevel
+        progressState.value.level++
+        progressState.value.skillPoints++
+
+        // Mise à jour du niveau max
+        if (progressState.value.level > progressState.value.maxLevel) {
+            progressState.value.maxLevel = progressState.value.level
+        }
+
+        // Calcul de l'XP nécessaire pour le niveau suivant (progression exponentielle)
+        progressState.value.xpToNextLevel = Math.floor(
+            config.value.levelThreshold * Math.pow(1.2, progressState.value.level - 1)
+        )
+
+        emit('onLevelUp', {
+            level: progressState.value.level,
+            skillPoints: progressState.value.skillPoints
+        })
+
+        // Vérification des achievements de niveau
+        checkLevelAchievements()
+    }
+
+    // Ajout de points principal avec logique complète
+    const addPoints = (basePoints, options = {}) => {
+        if (!gameState.value.isGameActive || basePoints <= 0) return 0
+
+        const finalPoints = calculatePoints(basePoints, options)
+
+        // Mise à jour du score
+        const previousScore = gameState.value.currentScore
+        gameState.value.currentScore += finalPoints
+        gameState.value.totalScore += finalPoints
 
         // Gestion du combo
-        if (options.combo) {
-            increaseCombo()
-        } else if (options.resetCombo) {
-            resetCombo()
+        updateCombo(options.combo !== false, finalPoints)
+
+        // Ajout d'XP (généralement 10% des points)
+        addExperience(Math.floor(finalPoints * 0.1))
+
+        // Vérification du nouveau record
+        checkNewRecord()
+
+        // Mise à jour des analytics
+        updateAnalytics(finalPoints, options)
+
+        // Vérification des achievements
+        if (config.value.achievements) {
+            checkScoreAchievements()
         }
 
-        // Vérifier le niveau
-        updateLevel()
-
-        // Vérifier le nouveau record
-        checkNewRecord()
+        // Émission de l'événement
+        emit('onScoreChange', {
+            points: finalPoints,
+            total: gameState.value.currentScore,
+            previous: previousScore,
+            multiplier: comboState.value.multiplier
+        })
 
         return finalPoints
     }
 
-    // Gérer les combos
-    const increaseCombo = () => {
-        combo.value++
-        lastComboTime = Date.now()
+    // Analytics et performance
+    const updateAnalytics = (points, options) => {
+        const now = Date.now()
+        const gameTime = now - gameState.value.gameStartTime
 
-        // Augmenter le multiplicateur
-        const newMultiplier = 1 + (combo.value * config.value.comboMultiplier)
-        multiplier.value = Math.min(newMultiplier, config.value.maxMultiplier)
+        // Actions par minute
+        analytics.value.actionsPerMinute = (gameState.value.currentScore / gameTime) * 60000
 
-        // Reset du timer de combo
-        if (comboTimer) {
-            clearTimeout(comboTimer)
+        // Performance de pointe
+        if (points > analytics.value.peakPerformance) {
+            analytics.value.peakPerformance = points
         }
 
-        comboTimer = setTimeout(() => {
-            resetCombo()
-        }, config.value.comboTimeout)
-    }
-
-    const resetCombo = () => {
-        combo.value = 0
-        multiplier.value = 1
-        lastComboTime = 0
-
-        if (comboTimer) {
-            clearTimeout(comboTimer)
-            comboTimer = null
+        // Précision si fournie
+        if (options.accuracy !== undefined) {
+            analytics.value.accuracy = (analytics.value.accuracy + options.accuracy) / 2
         }
     }
 
-    // Mettre à jour le niveau
-    const updateLevel = () => {
-        const newLevel = Math.floor(currentScore.value / config.value.levelThreshold) + 1
-        if (newLevel > level.value) {
-            level.value = newLevel
-            // Événement de montée de niveau
-            return true
+    // Système d'achievements avancé
+    const achievementDefinitions = {
+        'first-score': {
+            name: 'Premier Pas',
+            description: 'Marquer vos premiers points',
+            icon: '🎯',
+            check: () => gameState.value.currentScore > 0
+        },
+        'combo-starter': {
+            name: 'Combo Débutant',
+            description: 'Faire un combo de 5',
+            icon: '🔥',
+            check: () => comboState.value.count >= 5
+        },
+        'combo-master': {
+            name: 'Maître du Combo',
+            description: 'Faire un combo de 20',
+            icon: '⚡',
+            check: () => comboState.value.count >= 20
+        },
+        'level-5': {
+            name: 'Niveau 5',
+            description: 'Atteindre le niveau 5',
+            icon: '⭐',
+            check: () => progressState.value.level >= 5
+        },
+        'score-1000': {
+            name: 'Millionnaire',
+            description: 'Atteindre 1000 points',
+            icon: '💰',
+            check: () => gameState.value.currentScore >= 1000
+        },
+        'perfectionist': {
+            name: 'Perfectionniste',
+            description: 'Maintenir 95% de précision',
+            icon: '🎖️',
+            check: () => analytics.value.accuracy >= 95
+        },
+        'speedster': {
+            name: 'Éclair',
+            description: 'Dépasser 100 actions/minute',
+            icon: '💨',
+            check: () => analytics.value.actionsPerMinute >= 100
         }
-        return false
     }
 
-    // Vérifier nouveau record
+    const checkAchievements = () => {
+        const newAchievements = []
+
+        Object.entries(achievementDefinitions).forEach(([id, achievement]) => {
+            if (!historyData.value.achievements.has(id) && achievement.check()) {
+                historyData.value.achievements.add(id)
+                newAchievements.push({ id, ...achievement })
+
+                emit('onAchievement', { id, ...achievement })
+            }
+        })
+
+        return newAchievements
+    }
+
+    const checkScoreAchievements = () => checkAchievements()
+    const checkLevelAchievements = () => checkAchievements()
+
+    // Vérification du nouveau record
     const checkNewRecord = () => {
-        if (currentScore.value > highScore.value) {
-            highScore.value = currentScore.value
-            isNewRecord.value = true
+        if (gameState.value.currentScore > gameState.value.highScore) {
+            const previousRecord = gameState.value.highScore
+            gameState.value.highScore = gameState.value.currentScore
+            gameState.value.isNewRecord = true
+
+            emit('onNewRecord', {
+                newRecord: gameState.value.currentScore,
+                previousRecord
+            })
+
             return true
         }
         return false
     }
 
-    // Finaliser la partie
-    const endGame = () => {
-        // Ajouter à l'historique
-        const gameData = {
-            score: currentScore.value,
-            level: level.value,
-            combo: combo.value,
-            date: new Date().toISOString(),
-            duration: Date.now() - gameStartTime
-        }
+    // Démarrage de partie
+    const startGame = () => {
+        gameState.value.isGameActive = true
+        gameState.value.gameStartTime = Date.now()
+        gameState.value.gameEndTime = null
+        gameState.value.currentScore = 0
+        gameState.value.isNewRecord = false
 
-        scoreHistory.value.unshift(gameData)
-
-        // Garder seulement les 50 derniers scores
-        if (scoreHistory.value.length > 50) {
-            scoreHistory.value = scoreHistory.value.slice(0, 50)
-        }
-
-        // Sauvegarder
-        saveData()
-
-        // Reset du combo
         resetCombo()
+
+        // Reset analytics pour cette partie
+        analytics.value.actionsPerMinute = 0
+        analytics.value.accuracy = 100
+        analytics.value.peakPerformance = 0
+    }
+
+    // Fin de partie
+    const endGame = () => {
+        if (!gameState.value.isGameActive) return null
+
+        gameState.value.isGameActive = false
+        gameState.value.gameEndTime = Date.now()
+
+        const gameData = {
+            id: Date.now(),
+            score: gameState.value.currentScore,
+            level: progressState.value.level,
+            maxCombo: comboState.value.maxCombo,
+            duration: gameState.value.gameEndTime - gameState.value.gameStartTime,
+            date: new Date().toISOString(),
+            analytics: { ...analytics.value },
+            isRecord: gameState.value.isNewRecord
+        }
+
+        // Ajout à l'historique
+        historyData.value.scores.unshift(gameData)
+        historyData.value.stats.totalGames++
+        historyData.value.stats.totalPlayTime += gameData.duration
+
+        // Calcul de la moyenne
+        const total = historyData.value.scores.reduce((sum, game) => sum + game.score, 0)
+        historyData.value.stats.averageScore = Math.round(total / historyData.value.scores.length)
+
+        // Mise à jour de la meilleure session
+        if (!historyData.value.stats.bestSession || gameData.score > historyData.value.stats.bestSession.score) {
+            historyData.value.stats.bestSession = gameData
+        }
+
+        // Gestion des streaks
+        if (gameData.score > historyData.value.stats.averageScore) {
+            historyData.value.stats.currentStreak++
+            if (historyData.value.stats.currentStreak > historyData.value.stats.winStreak) {
+                historyData.value.stats.winStreak = historyData.value.stats.currentStreak
+            }
+        } else {
+            historyData.value.stats.currentStreak = 0
+        }
+
+        // Nettoyage de l'historique si nécessaire
+        if (historyData.value.scores.length > config.value.maxHistorySize) {
+            historyData.value.scores = historyData.value.scores.slice(0, config.value.maxHistorySize)
+        }
+
+        // Sauvegarde
+        saveAllData()
 
         return gameData
     }
 
-    // Recommencer une partie
-    const resetGame = () => {
-        currentScore.value = 0
-        isNewRecord.value = false
-        resetCombo()
-        gameStartTime = Date.now()
+    // Système de sauvegarde complet
+    const saveAllData = () => {
+        storage.save('gameState', gameState.value)
+        storage.save('progressState', progressState.value)
+        storage.save('historyData', {
+            ...historyData.value,
+            achievements: Array.from(historyData.value.achievements)
+        })
+        storage.save('analytics', analytics.value)
     }
 
-    // Variables de temps
-    let gameStartTime = Date.now()
+    const loadAllData = () => {
+        // Chargement de l'état du jeu
+        const savedGameState = storage.load('gameState', {})
+        Object.assign(gameState.value, {
+            ...gameState.value,
+            ...savedGameState,
+            isGameActive: false // Toujours démarrer inactif
+        })
 
-    // Statistiques calculées
-    const averageScore = computed(() => {
-        if (scoreHistory.value.length === 0) return 0
-        const total = scoreHistory.value.reduce((sum, game) => sum + game.score, 0)
-        return Math.round(total / scoreHistory.value.length)
-    })
+        // Chargement de la progression
+        const savedProgressState = storage.load('progressState', {})
+        Object.assign(progressState.value, savedProgressState)
 
-    const totalGamesPlayed = computed(() => scoreHistory.value.length)
+        // Chargement de l'historique
+        const savedHistoryData = storage.load('historyData', {})
+        Object.assign(historyData.value, savedHistoryData)
 
-    const bestCombo = computed(() => {
-        if (scoreHistory.value.length === 0) return 0
-        return Math.max(...scoreHistory.value.map(game => game.combo || 0))
-    })
+        // Conversion des achievements en Set
+        if (savedHistoryData.achievements && Array.isArray(savedHistoryData.achievements)) {
+            historyData.value.achievements = new Set(savedHistoryData.achievements)
+        }
 
+        // Chargement des analytics
+        const savedAnalytics = storage.load('analytics', {})
+        Object.assign(analytics.value, savedAnalytics)
+    }
+
+    // Computed properties
     const progressToNextLevel = computed(() => {
-        const currentLevelScore = (level.value - 1) * config.value.levelThreshold
-        const nextLevelScore = level.value * config.value.levelThreshold
-        const progress = currentScore.value - currentLevelScore
-        const total = nextLevelScore - currentLevelScore
-
-        return Math.min((progress / total) * 100, 100)
+        const progress = (progressState.value.xp / progressState.value.xpToNextLevel) * 100
+        return Math.min(progress, 100)
     })
 
-    // Système de bonus
-    const applyBonus = (type, value = 1) => {
-        switch (type) {
-            case 'double':
-                return addPoints(currentScore.value) // Double le score actuel
-            case 'multiplier':
-                multiplier.value = Math.min(multiplier.value * value, config.value.maxMultiplier)
-                break
-            case 'instant':
-                return addPoints(value)
-            case 'combo':
-                increaseCombo()
-                break
-        }
-    }
+    const formattedScore = computed(() => {
+        return gameState.value.currentScore.toLocaleString()
+    })
 
-    // Formatage du score
-    const formatScore = (score) => {
-        return score.toLocaleString()
-    }
+    const gameTime = computed(() => {
+        if (!gameState.value.isGameActive) return 0
+        return Date.now() - gameState.value.gameStartTime
+    })
 
-    const formatTime = (milliseconds) => {
-        const seconds = Math.floor(milliseconds / 1000)
-        const minutes = Math.floor(seconds / 60)
-        const remainingSeconds = seconds % 60
+    const comboTimeRemaining = computed(() => {
+        if (!comboState.value.timer) return 0
+        const elapsed = Date.now() - comboState.value.lastActionTime
+        return Math.max(0, config.value.comboTimeout - elapsed)
+    })
 
-        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
-    }
+    // Watchers pour auto-save
+    watch(gameState, saveAllData, { deep: true })
+    watch(progressState, saveAllData, { deep: true })
+    watch(historyData, saveAllData, { deep: true })
 
-    // Exporter les statistiques
-    const getStats = () => {
-        return {
-            currentScore: currentScore.value,
-            highScore: highScore.value,
-            averageScore: averageScore.value,
-            totalGames: totalGamesPlayed.value,
-            bestCombo: bestCombo.value,
-            level: level.value,
-            history: scoreHistory.value.slice(0, 10) // 10 derniers scores
-        }
-    }
-
-    // Importer/Exporter des données
-    const exportData = () => {
-        return {
-            gameId,
-            highScore: highScore.value,
-            scoreHistory: scoreHistory.value,
-            level: level.value,
-            exportDate: new Date().toISOString()
-        }
-    }
-
-    const importData = (data) => {
-        try {
-            if (data.gameId === gameId) {
-                highScore.value = Math.max(highScore.value, data.highScore || 0)
-                level.value = Math.max(level.value, data.level || 1)
-
-                // Fusionner l'historique
-                if (data.scoreHistory) {
-                    const mergedHistory = [...scoreHistory.value, ...data.scoreHistory]
-                    // Supprimer les doublons et trier par date
-                    const uniqueHistory = mergedHistory
-                        .filter((game, index, arr) =>
-                            arr.findIndex(g => g.date === game.date) === index
-                        )
-                        .sort((a, b) => new Date(b.date) - new Date(a.date))
-                        .slice(0, 50)
-
-                    scoreHistory.value = uniqueHistory
-                }
-
-                saveData()
-                return true
-            }
-        } catch (error) {
-            console.error('Erreur lors de l\'importation:', error)
-        }
-        return false
-    }
-
-    // Achievements/Succès basiques
-    const checkAchievements = () => {
-        const achievements = []
-
-        if (currentScore.value >= 1000 && !hasAchievement('first-1000')) {
-            achievements.push({ id: 'first-1000', name: 'Premier Millier', description: 'Atteindre 1000 points' })
-        }
-
-        if (combo.value >= 10 && !hasAchievement('combo-master')) {
-            achievements.push({ id: 'combo-master', name: 'Maître du Combo', description: 'Faire un combo de 10' })
-        }
-
-        if (level.value >= 5 && !hasAchievement('level-5')) {
-            achievements.push({ id: 'level-5', name: 'Niveau 5', description: 'Atteindre le niveau 5' })
-        }
-
-        return achievements
-    }
-
-    const hasAchievement = (achievementId) => {
-        const saved = localStorage.getItem(`${gameId}-achievements`)
-        if (saved) {
-            const achievements = JSON.parse(saved)
-            return achievements.includes(achievementId)
-        }
-        return false
-    }
-
-    const unlockAchievement = (achievementId) => {
-        let achievements = []
-        const saved = localStorage.getItem(`${gameId}-achievements`)
-        if (saved) {
-            achievements = JSON.parse(saved)
-        }
-
-        if (!achievements.includes(achievementId)) {
-            achievements.push(achievementId)
-            localStorage.setItem(`${gameId}-achievements`, JSON.stringify(achievements))
-            return true
-        }
-        return false
-    }
-
-    // Initialisation
+    // Initialisation et nettoyage
     onMounted(() => {
-        loadSavedData()
-        gameStartTime = Date.now()
+        loadAllData()
     })
 
-    // Nettoyage
     onUnmounted(() => {
-        if (comboTimer) {
-            clearTimeout(comboTimer)
+        if (comboState.value.timer) {
+            clearTimeout(comboState.value.timer)
         }
+        saveAllData()
     })
 
+    // API publique
     return {
-        // État
-        currentScore: readonly(currentScore),
-        highScore: readonly(highScore),
-        isNewRecord: readonly(isNewRecord),
-        combo: readonly(combo),
-        multiplier: readonly(multiplier),
-        level: readonly(level),
+        // État (readonly)
+        currentScore: readonly(computed(() => gameState.value.currentScore)),
+        highScore: readonly(computed(() => gameState.value.highScore)),
+        totalScore: readonly(computed(() => gameState.value.totalScore)),
+        isNewRecord: readonly(computed(() => gameState.value.isNewRecord)),
+        isGameActive: readonly(computed(() => gameState.value.isGameActive)),
 
-        // Statistiques calculées
-        averageScore,
-        totalGamesPlayed,
-        bestCombo,
+        // Combo
+        combo: readonly(computed(() => comboState.value.count)),
+        maxCombo: readonly(computed(() => comboState.value.maxCombo)),
+        multiplier: readonly(computed(() => comboState.value.multiplier)),
+        comboTimeRemaining,
+
+        // Progression
+        level: readonly(computed(() => progressState.value.level)),
+        xp: readonly(computed(() => progressState.value.xp)),
+        skillPoints: readonly(computed(() => progressState.value.skillPoints)),
         progressToNextLevel,
 
+        // Statistiques
+        stats: readonly(historyData.value.stats),
+        analytics: readonly(analytics),
+        gameTime,
+        formattedScore,
+
         // Actions
-        addPoints,
-        increaseCombo,
-        resetCombo,
-        applyBonus,
+        startGame,
         endGame,
-        resetGame,
+        addPoints,
+        addExperience,
+        resetCombo,
+        checkAchievements,
+
+        // Événements
+        on,
+        emit,
 
         // Utilitaires
-        formatScore,
-        formatTime,
-        getStats,
-        exportData,
-        importData,
-
-        // Achievements
-        checkAchievements,
-        unlockAchievement,
-        hasAchievement,
+        saveAllData,
+        loadAllData,
+        exportData: () => ({
+            gameId,
+            gameState: gameState.value,
+            progressState: progressState.value,
+            historyData: {
+                ...historyData.value,
+                achievements: Array.from(historyData.value.achievements)
+            },
+            analytics: analytics.value,
+            exportDate: new Date().toISOString()
+        }),
 
         // Configuration
-        config
+        config: readonly(config)
     }
 }

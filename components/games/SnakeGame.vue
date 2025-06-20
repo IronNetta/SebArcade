@@ -151,6 +151,11 @@ const canvasHeight = 400
 const gridSize = 20
 const baseSpeed = 150 // ms entre chaque mouvement
 
+// Fonction utilitaire pour formater les scores
+const formatScore = (score) => {
+  return score?.toLocaleString() || '0'
+}
+
 // État du jeu
 const gameCanvas = ref(null)
 const gameState = ref('menu') // 'menu', 'playing', 'paused', 'gameOver'
@@ -190,7 +195,7 @@ function updateGame(deltaTime) {
 }
 
 // MAINTENANT on peut utiliser les composables
-const { currentScore, highScore, level, combo, bestCombo, isNewRecord, addPoints, endGame, resetGame, formatScore } = useScore('snake')
+const { currentScore, highScore, level, combo, bestCombo, isNewRecord, addPoints, endGame, resetGame } = useScore('snake')
 const { getDirection, actions, bindToElement } = useKeyboard()
 const { start: startLoop, stop: stopLoop, isRunning, actualFPS } = useGameLoop(updateGame, 60)
 

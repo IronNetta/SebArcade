@@ -268,6 +268,11 @@ const nextPiece = ref(null)
 const heldPiece = ref(null) // ✅ Renommé pour éviter le conflit
 const canHold = ref(true)
 
+// Fonction utilitaire pour formater les scores
+const formatScore = (score) => {
+  return score?.toLocaleString() || '0'
+}
+
 // Timing
 let ctx = null
 let nextCtx = null
@@ -301,7 +306,7 @@ function updateGame(deltaTime) {
 }
 
 // Composables
-const { currentScore, highScore, isNewRecord, addPoints, endGame, resetGame, formatScore } = useScore('tetris')
+const { currentScore, highScore, isNewRecord, addPoints, endGame, resetGame } = useScore('tetris')
 const { arrows, actions, isKeyPressed, bindToElement } = useKeyboard()
 const { start: startLoop, stop: stopLoop, actualFPS } = useGameLoop(updateGame, 60)
 

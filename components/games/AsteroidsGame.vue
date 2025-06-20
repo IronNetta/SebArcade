@@ -168,6 +168,11 @@ const asteroidSpeeds = { large: 1.5, medium: 2.5, small: 4 }
 const asteroidSizes = { large: 40, medium: 25, small: 15 }
 const asteroidPoints = { large: 20, medium: 50, small: 100 }
 
+// Fonction utilitaire pour formater les scores
+const formatScore = (score) => {
+  return score?.toLocaleString() || '0'
+}
+
 // État du jeu
 const gameCanvas = ref(null)
 const gameState = ref('menu') // 'menu', 'playing', 'paused', 'gameOver', 'levelComplete'
@@ -238,7 +243,7 @@ function updateGame(deltaTime) {
 }
 
 // Composables
-const { currentScore, highScore, level: scoreLevel, isNewRecord, addPoints, endGame, resetGame, formatScore } = useScore('asteroids')
+const { currentScore, highScore, level: scoreLevel, isNewRecord, addPoints, endGame, resetGame } = useScore('asteroids')
 const { arrows, actions, bindToElement } = useKeyboard()
 const { start: startLoop, stop: stopLoop, actualFPS } = useGameLoop(updateGame, 60)
 

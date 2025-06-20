@@ -186,6 +186,11 @@ const player = ref({
   speed: playerSpeed
 })
 
+// Fonction utilitaire pour formater les scores
+const formatScore = (score) => {
+  return score?.toLocaleString() || '0'
+}
+
 const bullets = ref([])
 const aliens = ref([])
 const alienBullets = ref([])
@@ -229,7 +234,7 @@ function updateGame(deltaTime) {
 }
 
 // Composables
-const { currentScore, highScore, level, isNewRecord, addPoints, endGame, resetGame, formatScore } = useScore('space-invaders')
+const { currentScore, highScore, level, isNewRecord, addPoints, endGame, resetGame } = useScore('space-invaders')
 const { arrows, actions, bindToElement } = useKeyboard()
 const { start: startLoop, stop: stopLoop, actualFPS } = useGameLoop(updateGame, 60)
 

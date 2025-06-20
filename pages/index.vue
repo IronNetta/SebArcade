@@ -133,6 +133,32 @@ const games = ref([
     playTime: '2-6 min',
     status: 'available',
     route: '/games/breakout'
+  },
+  {
+    id: 'pong',
+    name: 'Pong',
+    description: 'Le premier jeu vidéo ! Battez l\'IA au tennis de table dans ce classique de 1972.',
+    icon: '🏓',
+    difficulty: '★★☆',
+    playTime: '2-8 min',
+    status: 'available',
+    route: '/games/pong',
+    tags: ['Classique', 'Sport', 'Versus IA'],
+    bestScore: localStorage.getItem('pong-high-score') || 0,
+    category: 'arcade'
+  },
+  {
+    id: 'dino',
+    name: 'Dino Runner',
+    description: 'Le T-Rex qui saute ! Évitez les cactus et les ptérodactyles dans ce runner sans fin.',
+    icon: '🦕',
+    difficulty: '★★☆',
+    playTime: '1-∞ min',
+    status: 'available',
+    route: '/games/dino',
+    tags: ['Runner', 'Chrome', 'Saut'],
+    bestScore: localStorage.getItem('dino-high-score') || 0,
+    category: 'arcade'
   }
 ])
 

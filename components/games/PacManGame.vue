@@ -208,6 +208,11 @@ const gameState = ref('menu') // 'menu', 'playing', 'paused', 'gameOver', 'level
 const showHelp = ref(false)
 const isMobile = ref(false)
 
+// Fonction utilitaire pour formater les scores
+const formatScore = (score) => {
+  return score?.toLocaleString() || '0'
+}
+
 // Variables de jeu
 const lives = ref(3)
 const level = ref(1)
@@ -275,7 +280,7 @@ function updateGame(deltaTime) {
 }
 
 // Composables
-const { currentScore, highScore, isNewRecord, addPoints, endGame, resetGame, formatScore } = useScore('pacman')
+const { currentScore, highScore, isNewRecord, addPoints, endGame, resetGame } = useScore('pacman')
 const { arrows, actions, bindToElement } = useKeyboard()
 const { start: startLoop, stop: stopLoop, actualFPS } = useGameLoop(updateGame, 60)
 
