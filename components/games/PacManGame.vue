@@ -280,7 +280,7 @@ function updateGame(deltaTime) {
 }
 
 // Composables
-const { currentScore, highScore, isNewRecord, addPoints, endGame, resetGame } = useScore('pacman')
+const { currentScore, highScore, isNewRecord, addPoints, endGame, startGame: resetGame } = useScore('pacman')
 const { arrows, actions, bindToElement } = useKeyboard()
 const { start: startLoop, stop: stopLoop, actualFPS } = useGameLoop(updateGame, 60)
 

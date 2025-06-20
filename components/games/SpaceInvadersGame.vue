@@ -234,7 +234,7 @@ function updateGame(deltaTime) {
 }
 
 // Composables
-const { currentScore, highScore, level, isNewRecord, addPoints, endGame, resetGame } = useScore('space-invaders')
+const { currentScore, highScore, level, isNewRecord, addPoints, endGame, startGame: resetGame } = useScore('space-invaders')
 const { arrows, actions, bindToElement } = useKeyboard()
 const { start: startLoop, stop: stopLoop, actualFPS } = useGameLoop(updateGame, 60)
 

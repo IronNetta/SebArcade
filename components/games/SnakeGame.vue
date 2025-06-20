@@ -146,7 +146,7 @@ import { useKeyboard } from '~/composables/games/useKeyboard'
 import { useGameLoop } from '~/composables/games/useGameLoop'
 
 // Configuration du jeu
-const canvasWidth = 400
+const canvasWidth = 600
 const canvasHeight = 400
 const gridSize = 20
 const baseSpeed = 150 // ms entre chaque mouvement
@@ -195,7 +195,7 @@ function updateGame(deltaTime) {
 }
 
 // MAINTENANT on peut utiliser les composables
-const { currentScore, highScore, level, combo, bestCombo, isNewRecord, addPoints, endGame, resetGame } = useScore('snake')
+const { currentScore, highScore, level, combo, bestCombo, isNewRecord, addPoints, endGame, startGame: resetGame } = useScore('snake')
 const { getDirection, actions, bindToElement } = useKeyboard()
 const { start: startLoop, stop: stopLoop, isRunning, actualFPS } = useGameLoop(updateGame, 60)
 

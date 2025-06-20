@@ -306,7 +306,7 @@ function updateGame(deltaTime) {
 }
 
 // Composables
-const { currentScore, highScore, isNewRecord, addPoints, endGame, resetGame } = useScore('tetris')
+const { currentScore, highScore, isNewRecord, addPoints, endGame, startGame: resetGame } = useScore('tetris')
 const { arrows, actions, isKeyPressed, bindToElement } = useKeyboard()
 const { start: startLoop, stop: stopLoop, actualFPS } = useGameLoop(updateGame, 60)
 

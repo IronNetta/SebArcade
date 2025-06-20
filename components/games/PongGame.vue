@@ -234,7 +234,7 @@ function updateGame(deltaTime) {
 }
 
 // Utilisation des composables
-const { currentScore, highScore, addPoints, endGame, resetGame } = useScore('pong')
+const { currentScore, highScore, addPoints, endGame, startGame: resetGame } = useScore('pong')
 const { getDirection, actions, bindToElement } = useKeyboard()
 const { start: startLoop, stop: stopLoop, isRunning, actualFPS } = useGameLoop(updateGame, 60)
 

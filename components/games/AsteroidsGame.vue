@@ -243,7 +243,7 @@ function updateGame(deltaTime) {
 }
 
 // Composables
-const { currentScore, highScore, level: scoreLevel, isNewRecord, addPoints, endGame, resetGame } = useScore('asteroids')
+const { currentScore, highScore, level: scoreLevel, isNewRecord, addPoints, endGame, startGame: resetGame } = useScore('asteroids')
 const { arrows, actions, bindToElement } = useKeyboard()
 const { start: startLoop, stop: stopLoop, actualFPS } = useGameLoop(updateGame, 60)
 
