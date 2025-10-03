@@ -114,15 +114,16 @@
     <!-- Contrôles mobiles -->
     <div class="mobile-controls" v-if="isMobile">
       <div class="dpad">
-        <button @touchstart="handleMobileInput('up')" class="dpad-btn dpad-up">↑</button>
+        <button @touchstart="handleMobileInput('up')" @mousedown="handleMobileInput('up')" class="dpad-btn dpad-up">↑</button>
         <div class="dpad-middle">
-          <button @touchstart="handleMobileInput('left')" class="dpad-btn dpad-left">←</button>
-          <button @touchstart="handleMobileInput('right')" class="dpad-btn dpad-right">→</button>
+          <button @touchstart="handleMobileInput('left')" @mousedown="handleMobileInput('left')" class="dpad-btn dpad-left">←</button>
+          <button @touchstart="handleMobileInput('right')" @mousedown="handleMobileInput('right')" class="dpad-btn dpad-right">→</button>
         </div>
-        <button @touchstart="handleMobileInput('down')" class="dpad-btn dpad-down">↓</button>
+        <button @touchstart="handleMobileInput('down')" @mousedown="handleMobileInput('down')" class="dpad-btn dpad-down">↓</button>
       </div>
 
       <div class="action-buttons">
+        <button @click="toggleFullscreen" class="action-btn">⛶</button>
         <button @click="pauseGame" class="action-btn">⏸️</button>
       </div>
     </div>
@@ -456,6 +457,85 @@ function gameOver() {
   endGame()
 }
 
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(err => {
+      console.log(`Erreur lors du passage en plein écran: ${err.message}`);
+    });
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
+}
+
+// Fonctions de gestion du glissement pour le jeu Snake
+let touchStartX = 0;
+let touchStartY = 0;
+
+function handleSwipeStart(event) {
+  if (gameState.value !== 'playing') return;
+  
+  let clientX, clientY;
+  if (event.type.includes('touch')) {
+    clientX = event.touches[0].clientX;
+    clientY = event.touches[0].clientY;
+  } else {
+    clientX = event.clientX;
+    clientY = event.clientY;
+  }
+  
+  touchStartX = clientX;
+  touchStartY = clientY;
+}
+
+function handleSwipeMove(event) {
+  // Gérer le mouvement pour déterminer la direction
+  if (gameState.value !== 'playing' || touchStartX === 0 || touchStartY === 0) return;
+}
+
+function handleSwipeEnd(event) {
+  if (gameState.value !== 'playing' || touchStartX === 0 || touchStartY === 0) return;
+  
+  let clientX, clientY;
+  if (event.type.includes('touch')) {
+    clientX = event.changedTouches[0].clientX;
+    clientY = event.changedTouches[0].clientY;
+  } else {
+    clientX = event.clientX;
+    clientY = event.clientY;
+  }
+  
+  // Calculer le déplacement
+  const diffX = clientX - touchStartX;
+  const diffY = clientY - touchStartY;
+  
+  // Déterminer la direction dominante
+  if (Math.abs(diffX) > Math.abs(diffY)) {
+    // Glissement horizontal
+    if (diffX > 0 && nextDirection.value.x === 0) {
+      // Droite
+      nextDirection.value = { x: 1, y: 0 };
+    } else if (diffX < 0 && nextDirection.value.x === 0) {
+      // Gauche
+      nextDirection.value = { x: -1, y: 0 };
+    }
+  } else {
+    // Glissement vertical
+    if (diffY > 0 && nextDirection.value.y === 0) {
+      // Bas
+      nextDirection.value = { x: 0, y: 1 };
+    } else if (diffY < 0 && nextDirection.value.y === 0) {
+      // Haut
+      nextDirection.value = { x: 0, y: -1 };
+    }
+  }
+  
+  // Réinitialiser les valeurs
+  touchStartX = 0;
+  touchStartY = 0;
+}
+
 function goToMenu() {
   gameState.value = 'menu'
   stopLoop()
@@ -717,18 +797,28 @@ onMounted(() => {
 /* Responsive */
 @media (max-width: 480px) {
   .snake-game {
-    padding: 1rem;
-    gap: 1rem;
+    padding: 0.5rem;
+    gap: 0.5rem;
   }
 
   .game-canvas {
-    width: 300px;
-    height: 300px;
+    width: 100%;
+    max-width: 300px;
+    height: auto;
+    aspect-ratio: 1/1;
+  }
+
+  .game-ui {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
   }
 
   .score-panel {
+    flex-wrap: wrap;
     justify-content: center;
     font-size: 8px;
+    gap: 0.5rem;
   }
 
   .mobile-controls {
@@ -739,6 +829,33 @@ onMounted(() => {
     width: 100px;
     height: 100px;
   }
+
+  .instructions {
+    font-size: 0.7rem;
+  }
+
+  .menu-buttons {
+    flex-direction: column;
+  }
+}
+
+/* Zones tactiles améliorées */
+.touch-zones {
+  width: 100%;
+  max-width: 400px;
+  height: 200px;
+  margin: 1rem 0;
+  position: relative;
+}
+
+.swipe-area {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 200px;
+  opacity: 0;
+  pointer-events: auto;
 }
 
 @keyframes pulse {

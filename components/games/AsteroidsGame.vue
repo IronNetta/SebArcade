@@ -130,9 +130,9 @@
     <!-- Contrôles mobiles -->
     <div class="mobile-controls" v-if="isMobile">
       <div class="movement-controls">
-        <button @touchstart="startAction('turnLeft')" @touchend="stopAction('turnLeft')" class="control-btn rotate-left">↻</button>
-        <button @touchstart="startAction('thrust')" @touchend="stopAction('thrust')" class="control-btn thrust">🚀</button>
-        <button @touchstart="startAction('turnRight')" @touchend="stopAction('turnRight')" class="control-btn rotate-right">↺</button>
+        <button @touchstart="startAction('turnLeft')" @touchend="stopAction('turnLeft')" @mousedown="startAction('turnLeft')" @mouseup="stopAction('turnLeft')" @mouseleave="stopAction('turnLeft')" class="control-btn rotate-left">↻</button>
+        <button @touchstart="startAction('thrust')" @touchend="stopAction('thrust')" @mousedown="startAction('thrust')" @mouseup="stopAction('thrust')" @mouseleave="stopAction('thrust')" class="control-btn thrust">🚀</button>
+        <button @touchstart="startAction('turnRight')" @touchend="stopAction('turnRight')" @mousedown="startAction('turnRight')" @mouseup="stopAction('turnRight')" @mouseleave="stopAction('turnRight')" class="control-btn rotate-right">↺</button>
       </div>
 
       <div class="action-controls">
@@ -1110,8 +1110,10 @@ onMounted(() => {
   }
 
   .game-canvas {
-    width: 400px;
-    height: 333px;
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    aspect-ratio: 6/5;
   }
 
   .score-panel {
@@ -1140,9 +1142,26 @@ onMounted(() => {
 }
 
 @media (max-width: 480px) {
+  .asteroids-game {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
   .game-canvas {
-    width: 300px;
-    height: 250px;
+    width: 100%;
+    max-width: 300px;
+    aspect-ratio: 6/5;
+  }
+
+  .game-ui {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .score-panel {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .control-btn {
@@ -1154,6 +1173,14 @@ onMounted(() => {
   .thrust {
     width: 55px;
     height: 55px;
+  }
+
+  .instructions {
+    font-size: 0.7rem;
+  }
+
+  .menu-buttons {
+    flex-direction: column;
   }
 }
 </style>

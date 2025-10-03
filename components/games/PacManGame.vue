@@ -134,12 +134,12 @@
     <!-- Contrôles mobiles -->
     <div class="mobile-controls" v-if="isMobile">
       <div class="dpad">
-        <button @touchstart="setDirection('up')" class="dpad-btn dpad-up">↑</button>
+        <button @touchstart="setDirection('up')" @mousedown="setDirection('up')" class="dpad-btn dpad-up">↑</button>
         <div class="dpad-middle">
-          <button @touchstart="setDirection('left')" class="dpad-btn dpad-left">←</button>
-          <button @touchstart="setDirection('right')" class="dpad-btn dpad-right">→</button>
+          <button @touchstart="setDirection('left')" @mousedown="setDirection('left')" class="dpad-btn dpad-left">←</button>
+          <button @touchstart="setDirection('right')" @mousedown="setDirection('right')" class="dpad-btn dpad-right">→</button>
         </div>
-        <button @touchstart="setDirection('down')" class="dpad-btn dpad-down">↓</button>
+        <button @touchstart="setDirection('down')" @mousedown="setDirection('down')" class="dpad-btn dpad-down">↓</button>
       </div>
 
       <div class="action-controls">
@@ -1184,8 +1184,10 @@ onMounted(() => {
   }
 
   .game-canvas {
-    width: 400px;
-    height: 400px;
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    aspect-ratio: 1/1;
   }
 
   .score-panel {
@@ -1206,9 +1208,26 @@ onMounted(() => {
 }
 
 @media (max-width: 480px) {
+  .pacman-game {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
   .game-canvas {
-    width: 300px;
-    height: 300px;
+    width: 100%;
+    max-width: 300px;
+    aspect-ratio: 1/1;
+  }
+
+  .game-ui {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .score-panel {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .dpad-btn {
@@ -1218,6 +1237,14 @@ onMounted(() => {
   .action-btn {
     width: 50px;
     height: 50px;
+  }
+
+  .instructions {
+    font-size: 0.7rem;
+  }
+
+  .menu-buttons {
+    flex-direction: column;
   }
 }
 </style>

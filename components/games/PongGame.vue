@@ -130,13 +130,30 @@
       </div>
     </div>
 
+    <!-- Zones tactiles améliorées -->
+    <div class="touch-zones" v-if="isMobile">
+      <div class="left-zone" 
+           @touchstart="handleTouchStart" 
+           @touchend="handleTouchEnd"
+           @touchmove="handleTouchMove"
+           @mousedown="handleTouchStart"
+           @mouseup="handleTouchEnd"
+           @mousemove="handleTouchMove"
+           @mouseleave="handleTouchEnd"></div>
+      <div class="right-zone" 
+           @touchstart="handleTouchStart" 
+           @touchend="handleTouchEnd"
+           @touchmove="handleTouchMove"
+           @mousedown="handleTouchStart"
+           @mouseup="handleTouchEnd"
+           @mousemove="handleTouchMove"
+           @mouseleave="handleTouchEnd"></div>
+    </div>
+    
     <!-- Contrôles mobiles -->
     <div class="mobile-controls" v-if="isMobile">
-      <div class="paddle-controls">
-        <button @touchstart="handleMobileInput('up')" @touchend="stopMobileInput" class="control-btn">↑</button>
-        <button @touchstart="handleMobileInput('down')" @touchend="stopMobileInput" class="control-btn">↓</button>
-      </div>
       <div class="action-buttons">
+        <button @click="toggleFullscreen" class="action-btn">⛶</button>
         <button @click="pauseGame" class="action-btn">⏸️</button>
       </div>
     </div>
@@ -531,6 +548,87 @@ function gameOver() {
   endGame()
 }
 
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(err => {
+      console.log(`Erreur lors du passage en plein écran: ${err.message}`);
+    });
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
+}
+
+// Fonctions de gestion des zones tactiles améliorées
+let touchStartY = 0;
+let currentTouchY = 0;
+
+function handleTouchStart(event) {
+  if (gameState.value !== 'playing') return;
+  
+  let clientY;
+  if (event.type.includes('touch')) {
+    clientY = event.touches[0].clientY;
+  } else {
+    clientY = event.clientY;
+  }
+  
+  touchStartY = clientY;
+  currentTouchY = clientY;
+}
+
+function handleTouchMove(event) {
+  if (gameState.value !== 'playing' || touchStartY === 0) return;
+  
+  let clientY;
+  if (event.type.includes('touch')) {
+    clientY = event.touches[0].clientY;
+  } else {
+    clientY = event.clientY;
+  }
+  
+  currentTouchY = clientY;
+  
+  // Déterminer si le mouvement est sur la gauche ou la droite de l'écran
+  const touchX = event.type.includes('touch') ? event.touches[0].clientX : event.clientX;
+  const screenWidth = window.innerWidth;
+  
+  if (touchX < screenWidth / 2) {
+    // Côté gauche - déplacer la raquette du joueur vers le haut ou le bas
+    if (currentTouchY < touchStartY) {
+      // Mouvement vers le haut
+      keys.value.up = true;
+      keys.value.down = false;
+    } else if (currentTouchY > touchStartY) {
+      // Mouvement vers le bas
+      keys.value.up = false;
+      keys.value.down = true;
+    }
+  } else {
+    // Côté droit - déplacer la raquette IA (dans une version étendue) ou gérer autrement
+    // Pour l'instant, on utilise aussi ça pour le joueur pour un contrôle plus naturel
+    if (currentTouchY < touchStartY) {
+      // Mouvement vers le haut
+      keys.value.up = true;
+      keys.value.down = false;
+    } else if (currentTouchY > touchStartY) {
+      // Mouvement vers le bas
+      keys.value.up = false;
+      keys.value.down = true;
+    }
+  }
+  
+  touchStartY = currentTouchY; // Mettre à jour la position de départ pour le prochain mouvement
+}
+
+function handleTouchEnd(event) {
+  keys.value.up = false;
+  keys.value.down = false;
+  touchStartY = 0;
+  currentTouchY = 0;
+}
+
 function goToMenu() {
   gameState.value = 'menu'
   stopLoop()
@@ -844,8 +942,10 @@ onMounted(() => {
   }
 
   .game-canvas {
-    width: 400px;
-    height: 267px;
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    aspect-ratio: 3/2;
   }
 
   .score-panel {
@@ -871,14 +971,73 @@ onMounted(() => {
 }
 
 @media (max-width: 480px) {
+  .pong-game {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
   .game-canvas {
-    width: 300px;
-    height: 200px;
+    width: 100%;
+    max-width: 300px;
+    aspect-ratio: 3/2;
+  }
+
+  .game-ui {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
   }
 
   .score-panel {
     flex-direction: column;
     gap: 0.5rem;
+    width: 100%;
+    justify-content: center;
   }
+
+  .player-score, .ai-score {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .instructions {
+    font-size: 0.7rem;
+  }
+
+  .menu-buttons {
+    flex-direction: column;
+  }
+}
+
+/* Zones tactiles améliorées */
+.touch-zones {
+  display: flex;
+  width: 100%;
+  max-width: 600px;
+  height: 200px;
+  margin-top: 1rem;
+  position: relative;
+}
+
+.left-zone, .right-zone {
+  flex: 1;
+  position: absolute;
+  top: 0;
+  height: 200px;
+  z-index: 10;
+}
+
+.left-zone {
+  left: 0;
+}
+
+.right-zone {
+  right: 0;
+}
+
+/* Masquer les zones de toucher pour ne pas interférer avec les boutons */
+.left-zone, .right-zone {
+  opacity: 0;
+  pointer-events: auto; /* Permet aux événements tactiles de fonctionner */
 }
 </style>

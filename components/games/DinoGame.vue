@@ -119,14 +119,15 @@
     <!-- Contrôles mobiles -->
     <div class="mobile-controls" v-if="isMobile">
       <div class="jump-controls">
-        <button @touchstart="handleMobileInput('jump')" class="control-btn jump-btn">
+        <button @touchstart="handleMobileInput('jump')" @mousedown="handleMobileInput('jump')" class="control-btn jump-btn">
           🦕 SAUT
         </button>
-        <button @touchstart="handleMobileInput('duck')" @touchend="stopDucking" class="control-btn duck-btn">
+        <button @touchstart="handleMobileInput('duck')" @touchend="stopDucking" @mousedown="handleMobileInput('duck')" @mouseup="stopDucking" @mouseleave="stopDucking" class="control-btn duck-btn">
           🦆 BAISSER
         </button>
       </div>
       <div class="action-buttons">
+        <button @click="toggleFullscreen" class="action-btn">⛶</button>
         <button @click="pauseGame" class="action-btn">⏸️</button>
       </div>
     </div>
@@ -614,6 +615,18 @@ function resumeGame() {
   }
 }
 
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(err => {
+      console.log(`Erreur lors du passage en plein écran: ${err.message}`);
+    });
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
+}
+
 function gameOver() {
   gameState.value = 'gameOver'
   stopLoop()
@@ -882,8 +895,10 @@ onMounted(() => {
   }
 
   .game-canvas {
-    width: 600px;
-    height: 150px;
+    width: 100%;
+    max-width: 600px;
+    height: auto;
+    aspect-ratio: 4/1;
   }
 
   .score-panel {
@@ -897,9 +912,21 @@ onMounted(() => {
 }
 
 @media (max-width: 680px) {
+  .dino-game {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
   .game-canvas {
-    width: 400px;
-    height: 100px;
+    width: 100%;
+    max-width: 400px;
+    aspect-ratio: 4/1;
+  }
+
+  .game-ui {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
   }
 
   .score-panel {
@@ -910,10 +937,17 @@ onMounted(() => {
 
   .mobile-controls {
     max-width: 400px;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
   }
 
   .jump-controls {
     flex-direction: column;
+  }
+
+  .instructions {
+    font-size: 0.7rem;
   }
 }
 

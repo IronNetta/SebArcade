@@ -127,8 +127,8 @@
     <!-- Contrôles mobiles -->
     <div class="mobile-controls" v-if="isMobile">
       <div class="movement-controls">
-        <button @touchstart="startMoving('left')" @touchend="stopMoving" class="move-btn">←</button>
-        <button @touchstart="startMoving('right')" @touchend="stopMoving" class="move-btn">→</button>
+        <button @touchstart="startMoving('left')" @touchend="stopMoving" @mousedown="startMoving('left')" @mouseup="stopMoving" @mouseleave="stopMoving" class="move-btn">←</button>
+        <button @touchstart="startMoving('right')" @touchend="stopMoving" @mousedown="startMoving('right')" @mouseup="stopMoving" @mouseleave="stopMoving" class="move-btn">→</button>
       </div>
 
       <div class="action-controls">
@@ -1067,8 +1067,10 @@ onMounted(() => {
   }
 
   .game-canvas {
-    width: 400px;
-    height: 333px;
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    aspect-ratio: 6/5;
   }
 
   .score-panel {
@@ -1092,9 +1094,26 @@ onMounted(() => {
 }
 
 @media (max-width: 480px) {
+  .space-invaders-game {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
   .game-canvas {
-    width: 300px;
-    height: 250px;
+    width: 100%;
+    max-width: 300px;
+    aspect-ratio: 6/5;
+  }
+
+  .game-ui {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .score-panel {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .move-btn {
@@ -1106,6 +1125,14 @@ onMounted(() => {
   .pause-btn {
     width: 50px;
     height: 50px;
+  }
+
+  .instructions {
+    font-size: 0.7rem;
+  }
+
+  .menu-buttons {
+    flex-direction: column;
   }
 }
 </style>

@@ -1660,8 +1660,10 @@ onUnmounted(() => {
   }
 
   .game-canvas {
-    width: 400px;
-    height: 333px;
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    aspect-ratio: 6/5;
   }
 
   .score-panel {
@@ -1695,11 +1697,24 @@ onUnmounted(() => {
 @media (max-width: 480px) {
   .breakout-game {
     padding: 0.5rem;
+    gap: 0.5rem;
   }
 
   .game-canvas {
-    width: 300px;
-    height: 250px;
+    width: 100%;
+    max-width: 300px;
+    aspect-ratio: 6/5;
+  }
+
+  .game-ui {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .score-panel {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .game-button {
@@ -1718,7 +1733,7 @@ onUnmounted(() => {
   }
 
   .instructions {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     padding: 0.8rem;
   }
 
@@ -1729,6 +1744,10 @@ onUnmounted(() => {
 
   .menu h3, .pause-menu h3, .game-over h3, .level-complete h3 {
     font-size: 1rem;
+  }
+
+  .menu-buttons {
+    flex-direction: column;
   }
 }
 

@@ -140,13 +140,13 @@
     <!-- Contrôles mobiles -->
     <div class="mobile-controls" v-if="isMobile">
       <div class="movement-row">
-        <button @touchstart="startAction('left')" @touchend="stopAction('left')" class="control-btn">←</button>
+        <button @touchstart="startAction('left')" @touchend="stopAction('left')" @mousedown="startAction('left')" @mouseup="stopAction('left')" @mouseleave="stopAction('left')" class="control-btn">←</button>
         <button @click="rotatePiece" class="control-btn rotate">↻</button>
-        <button @touchstart="startAction('right')" @touchend="stopAction('right')" class="control-btn">→</button>
+        <button @touchstart="startAction('right')" @touchend="stopAction('right')" @mousedown="startAction('right')" @mouseup="stopAction('right')" @mouseleave="stopAction('right')" class="control-btn">→</button>
       </div>
 
       <div class="action-row">
-        <button @touchstart="startAction('down')" @touchend="stopAction('down')" class="control-btn down">⬇</button>
+        <button @touchstart="startAction('down')" @touchend="stopAction('down')" @mousedown="startAction('down')" @mouseup="stopAction('down')" @mouseleave="stopAction('down')" class="control-btn down">⬇</button>
         <button @click="hardDrop" class="control-btn drop">💨</button>
         <button @click="holdPiece" class="control-btn hold">🔄</button>
       </div>
@@ -809,6 +809,18 @@ function startGame() {
   })
 }
 
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(err => {
+      console.log(`Erreur lors du passage en plein écran: ${err.message}`);
+    });
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
+}
+
 function pauseGame() {
   if (gameState.value === 'playing') {
     gameState.value = 'paused'
@@ -1196,8 +1208,10 @@ onMounted(() => {
   }
 
   .game-canvas {
-    width: 250px;
-    height: 500px;
+    width: 100%;
+    max-width: 250px;
+    height: auto;
+    aspect-ratio: 1/2;
   }
 
   .preview-canvas {
@@ -1216,9 +1230,38 @@ onMounted(() => {
 }
 
 @media (max-width: 480px) {
+  .tetris-game {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
   .game-canvas {
-    width: 200px;
-    height: 400px;
+    width: 100%;
+    max-width: 200px;
+    aspect-ratio: 1/2;
+  }
+
+  .game-ui {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .left-panel,
+  .right-panel {
+    flex-direction: column;
+    width: 100%;
+    align-items: center;
+  }
+
+  .score-section,
+  .stats-section,
+  .next-piece,
+  .hold-piece,
+  .level-progress {
+    width: 100%;
+    max-width: 250px;
+    min-width: auto;
   }
 
   .control-btn {
@@ -1231,18 +1274,23 @@ onMounted(() => {
     width: 50px;
   }
 
-  .left-panel,
-  .right-panel {
-    flex-direction: column;
-    width: 100%;
+  .instructions {
+    font-size: 0.7rem;
   }
 
-  .score-section,
-  .stats-section,
-  .next-piece,
-  .hold-piece,
-  .level-progress {
-    min-width: auto;
+  .menu-buttons {
+    flex-direction: column;
   }
+}
+
+/* Bouton plein écran */
+.control-btn.fullscreen {
+  background: rgba(0, 100, 255, 0.2);
+  border-color: #0066ff;
+  color: #0066ff;
+}
+
+.control-btn.fullscreen:active {
+  background: rgba(0, 100, 255, 0.4);
 }
 </style>
