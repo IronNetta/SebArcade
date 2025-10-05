@@ -1,10 +1,23 @@
 export default defineNuxtConfig({
-    devtools: { enabled: true },
+    devtools: { enabled: false }, // Disable devtools which might trigger oxc-parser
 
     modules: [
         '@nuxtjs/tailwindcss',
         '@nuxt/content'
     ],
+
+    content: {
+        // Disable features that might use oxc-parser
+        markdown: {
+            // Use a simpler parser to avoid oxc-parser
+            toc: false, // Disable table of contents to reduce parser usage
+        }
+    },
+
+    // Vercel specific configuration
+    nitro: {
+        preset: 'vercel'
+    },
 
     css: [
         '~/assets/css/main.css'
