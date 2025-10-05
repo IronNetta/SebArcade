@@ -177,12 +177,40 @@ import { useKeyboard } from '~/composables/games/useKeyboard'
 import { useGameLoop } from '~/composables/games/useGameLoop'
 
 // Configuration du jeu
-const canvasWidth = 600
-const canvasHeight = 400
+const canvasWidth = ref(600)
+const canvasHeight = ref(400)
 const paddleWidth = 15
 const paddleHeight = 80
 const ballSize = 15
 const winningScore = 7
+
+// Ajuster les dimensions du canvas pour être responsive
+onMounted(() => {
+  updateCanvasSize()
+  window.addEventListener('resize', updateCanvasSize)
+  
+  onUnmounted(() => {
+    window.removeEventListener('resize', updateCanvasSize)
+  })
+})
+
+function updateCanvasSize() {
+  const maxWidth = Math.min(600, window.innerWidth * 0.9)
+  const maxHeight = Math.min(400, window.innerHeight * 0.6)
+  
+  // Maintenir le ratio d'aspect 3:2
+  const aspectRatio = 3 / 2
+  let width = maxWidth
+  let height = width / aspectRatio
+  
+  if (height > maxHeight) {
+    height = maxHeight
+    width = height * aspectRatio
+  }
+  
+  canvasWidth.value = Math.max(300, Math.floor(width))
+  canvasHeight.value = Math.max(200, Math.floor(height))
+}
 
 
 // Fonction utilitaire pour formater les scores
@@ -207,23 +235,23 @@ const level = ref(1)
 // Objets du jeu
 const playerPaddle = ref({
   x: 30,
-  y: canvasHeight / 2 - paddleHeight / 2,
+  y: canvasHeight.value / 2 - paddleHeight / 2,
   width: paddleWidth,
   height: paddleHeight,
   speed: 6
 })
 
 const aiPaddle = ref({
-  x: canvasWidth - 30 - paddleWidth,
-  y: canvasHeight / 2 - paddleHeight / 2,
+  x: canvasWidth.value - 30 - paddleWidth,
+  y: canvasHeight.value / 2 - paddleHeight / 2,
   width: paddleWidth,
   height: paddleHeight,
   speed: 4
 })
 
 const ball = ref({
-  x: canvasWidth / 2,
-  y: canvasHeight / 2,
+  x: canvasWidth.value / 2,
+  y: canvasHeight.value / 2,
   dx: 0,
   dy: 0,
   size: ballSize,
@@ -359,7 +387,7 @@ function updateBall() {
   ball.value.y += ball.value.dy
 
   // Collision avec le haut/bas
-  if (ball.value.y <= 0 || ball.value.y >= canvasHeight - ball.value.size) {
+  if (ball.value.y <= 0 || ball.value.y >= canvasHeight.value - ball.value.size) {
     ball.value.dy = -ball.value.dy
   }
 
@@ -370,7 +398,7 @@ function updateBall() {
     if (aiScore.value >= winningScore) {
       gameOver()
     }
-  } else if (ball.value.x > canvasWidth) {
+  } else if (ball.value.x > canvasWidth.value) {
     playerScore.value++
     addPoints(100 + currentRally.value * 10)
     resetBall()
@@ -431,8 +459,8 @@ function increaseDifficulty() {
 
 // Réinitialiser la balle
 function resetBall() {
-  ball.value.x = canvasWidth / 2
-  ball.value.y = canvasHeight / 2
+  ball.value.x = canvasWidth.value / 2
+  ball.value.y = canvasHeight.value / 2
 
   // Direction aléatoire
   const angle = (Math.random() - 0.5) * Math.PI / 3 // ±30 degrés
@@ -470,15 +498,15 @@ function draw() {
 
   // Effacer le canvas
   ctx.fillStyle = '#000'
-  ctx.fillRect(0, 0, canvasWidth, canvasHeight)
+  ctx.fillRect(0, 0, canvasWidth.value, canvasHeight.value)
 
   // Ligne centrale
   ctx.setLineDash([10, 10])
   ctx.strokeStyle = '#333'
   ctx.lineWidth = 2
   ctx.beginPath()
-  ctx.moveTo(canvasWidth / 2, 0)
-  ctx.lineTo(canvasWidth / 2, canvasHeight)
+  ctx.moveTo(canvasWidth.value / 2, 0)
+  ctx.lineTo(canvasWidth.value / 2, canvasHeight.value)
   ctx.stroke()
   ctx.setLineDash([])
 
@@ -513,8 +541,8 @@ function startGame() {
   maxSpeed.value = ballSpeed.value
 
   // Réinitialiser les positions
-  playerPaddle.value.y = canvasHeight / 2 - paddleHeight / 2
-  aiPaddle.value.y = canvasHeight / 2 - paddleHeight / 2
+  playerPaddle.value.y = canvasHeight.value / 2 - paddleHeight / 2
+  aiPaddle.value.y = canvasHeight.value / 2 - paddleHeight / 2
 
   resetBall()
   gameState.value = 'playing'
@@ -651,8 +679,9 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   gap: 2rem;
-  max-width: 800px;
+  max-width: 100%;
   margin: 0 auto;
+  padding: 0 1rem;
 }
 
 /* Interface de jeu */
@@ -731,6 +760,8 @@ onMounted(() => {
   box-shadow:
       0 0 20px rgba(0, 255, 0, 0.3),
       0 0 40px rgba(255, 0, 255, 0.2);
+  max-width: 100%;
+  height: auto;
 }
 
 .game-canvas:focus {

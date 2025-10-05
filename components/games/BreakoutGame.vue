@@ -173,8 +173,8 @@ import { useGameLoop } from '~/composables/games/useGameLoop'
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 
 // Configuration du jeu
-const canvasWidth = 600
-const canvasHeight = 500
+const canvasWidth = ref(600)
+const canvasHeight = ref(500)
 const paddleWidth = 80
 const paddleHeight = 12
 const ballRadius = 8
@@ -183,6 +183,34 @@ const brickCols = 12
 const brickWidth = 45
 const brickHeight = 20
 const brickPadding = 5
+
+// Ajuster les dimensions du canvas pour être responsive
+onMounted(() => {
+  updateCanvasSize()
+  window.addEventListener('resize', updateCanvasSize)
+  
+  onUnmounted(() => {
+    window.removeEventListener('resize', updateCanvasSize)
+  })
+})
+
+function updateCanvasSize() {
+  const maxWidth = Math.min(600, window.innerWidth * 0.9)
+  const maxHeight = Math.min(500, window.innerHeight * 0.6)
+  
+  // Maintenir un ratio d'aspect approprié
+  const aspectRatio = 6 / 5
+  let width = maxWidth
+  let height = width / aspectRatio
+  
+  if (height > maxHeight) {
+    height = maxHeight
+    width = height * aspectRatio
+  }
+  
+  canvasWidth.value = Math.max(300, Math.floor(width))
+  canvasHeight.value = Math.max(250, Math.floor(height))
+}
 
 // Couleurs des briques par rangée (du haut vers le bas)
 const brickColors = [
@@ -217,16 +245,16 @@ const actualFPS = ref(60)
 
 // Entités du jeu
 const paddle = ref({
-  x: canvasWidth / 2 - paddleWidth / 2,
-  y: canvasHeight - 30,
+  x: canvasWidth.value / 2 - paddleWidth / 2,
+  y: canvasHeight.value - 30,
   width: paddleWidth,
   height: paddleHeight,
   speed: 8
 })
 
 const ball = ref({
-  x: canvasWidth / 2,
-  y: canvasHeight - 50,
+  x: canvasWidth.value / 2,
+  y: canvasHeight.value - 50,
   velocityX: 4,
   velocityY: -4,
   radius: ballRadius,
@@ -394,7 +422,7 @@ function handleInput(deltaTime) {
     lastPaddleMove = 0
   }
   if (keys.value.right && lastPaddleMove >= paddleMoveDelay) {
-    paddle.value.x = Math.min(canvasWidth - paddle.value.width, paddle.value.x + paddle.value.speed)
+    paddle.value.x = Math.min(canvasWidth.value - paddle.value.width, paddle.value.x + paddle.value.speed)
     lastPaddleMove = 0
   }
 
@@ -421,7 +449,7 @@ function handleMouseMove(event) {
 
   const rect = gameCanvas.value.getBoundingClientRect()
   mouseX = event.clientX - rect.left
-  paddle.value.x = Math.max(0, Math.min(canvasWidth - paddle.value.width, mouseX - paddle.value.width / 2))
+  paddle.value.x = Math.max(0, Math.min(canvasWidth.value - paddle.value.width, mouseX - paddle.value.width / 2))
 }
 
 // Mise à jour des entités
@@ -440,9 +468,9 @@ function updateBall(deltaTime) {
   ball.value.y += ball.value.velocityY * (deltaTime / 16.67)
 
   // Collision avec les murs
-  if (ball.value.x <= ball.value.radius || ball.value.x >= canvasWidth - ball.value.radius) {
+  if (ball.value.x <= ball.value.radius || ball.value.x >= canvasWidth.value - ball.value.radius) {
     ball.value.velocityX = -ball.value.velocityX
-    ball.value.x = Math.max(ball.value.radius, Math.min(canvasWidth - ball.value.radius, ball.value.x))
+    ball.value.x = Math.max(ball.value.radius, Math.min(canvasWidth.value - ball.value.radius, ball.value.x))
     createImpactParticles(ball.value.x, ball.value.y, '#ffffff')
   }
 
@@ -453,7 +481,7 @@ function updateBall(deltaTime) {
   }
 
   // Balle perdue
-  if (ball.value.y > canvasHeight + 50) {
+  if (ball.value.y > canvasHeight.value + 50) {
     lives.value--
     combo.value = 0
 
@@ -761,11 +789,11 @@ function lightenColor(color, amount) {
 function draw() {
   if (!ctx) return
 
-  const gradient = ctx.createLinearGradient(0, 0, 0, canvasHeight)
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvasHeight.value)
   gradient.addColorStop(0, '#001122')
   gradient.addColorStop(1, '#000000')
   ctx.fillStyle = gradient
-  ctx.fillRect(0, 0, canvasWidth, canvasHeight)
+  ctx.fillRect(0, 0, canvasWidth.value, canvasHeight.value)
 
   // Dessiner selon l'état du jeu
   if (gameState.value === 'playing' || gameState.value === 'serving' || gameState.value === 'paused') {
@@ -998,16 +1026,16 @@ function startGame() {
   levelCompleteTimer = 0
 
   paddle.value = {
-    x: canvasWidth / 2 - paddleWidth / 2,
-    y: canvasHeight - 30,
+    x: canvasWidth.value / 2 - paddleWidth / 2,
+    y: canvasHeight.value - 30,
     width: paddleWidth,
     height: paddleHeight,
     speed: 8
   }
 
   ball.value = {
-    x: canvasWidth / 2,
-    y: canvasHeight - 50,
+    x: canvasWidth.value / 2,
+    y: canvasHeight.value - 50,
     velocityX: 4,
     velocityY: -4,
     radius: ballRadius,

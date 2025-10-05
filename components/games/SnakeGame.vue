@@ -147,10 +147,38 @@ import { useKeyboard } from '~/composables/games/useKeyboard'
 import { useGameLoop } from '~/composables/games/useGameLoop'
 
 // Configuration du jeu
-const canvasWidth = 600
-const canvasHeight = 400
+const canvasWidth = ref(600)
+const canvasHeight = ref(400)
 const gridSize = 20
 const baseSpeed = 150 // ms entre chaque mouvement
+
+// Ajuster les dimensions du canvas pour être responsive
+onMounted(() => {
+  updateCanvasSize()
+  window.addEventListener('resize', updateCanvasSize)
+  
+  onUnmounted(() => {
+    window.removeEventListener('resize', updateCanvasSize)
+  })
+})
+
+function updateCanvasSize() {
+  const maxWidth = Math.min(600, window.innerWidth * 0.9)
+  const maxHeight = Math.min(400, window.innerHeight * 0.6)
+  
+  // Maintenir le ratio d'aspect 3:2
+  const aspectRatio = 3 / 2
+  let width = maxWidth
+  let height = width / aspectRatio
+  
+  if (height > maxHeight) {
+    height = maxHeight
+    width = height * aspectRatio
+  }
+  
+  canvasWidth.value = Math.max(300, Math.floor(width / gridSize) * gridSize)
+  canvasHeight.value = Math.max(200, Math.floor(height / gridSize) * gridSize)
+}
 
 // Fonction utilitaire pour formater les scores
 const formatScore = (score) => {
@@ -268,7 +296,7 @@ function moveSnake() {
   head.y += direction.value.y
 
   // Vérifier collisions avec les murs
-  if (head.x < 0 || head.x >= canvasWidth || head.y < 0 || head.y >= canvasHeight) {
+  if (head.x < 0 || head.x >= canvasWidth.value || head.y < 0 || head.y >= canvasHeight.value) {
     gameOver()
     return
   }
@@ -317,8 +345,8 @@ function generateFood() {
 
   do {
     newFood = {
-      x: Math.floor(Math.random() * (canvasWidth / gridSize)) * gridSize,
-      y: Math.floor(Math.random() * (canvasHeight / gridSize)) * gridSize
+      x: Math.floor(Math.random() * (canvasWidth.value / gridSize)) * gridSize,
+      y: Math.floor(Math.random() * (canvasHeight.value / gridSize)) * gridSize
     }
     attempts++
   } while (
@@ -335,7 +363,7 @@ function draw() {
 
   // Effacer le canvas
   ctx.fillStyle = '#000'
-  ctx.fillRect(0, 0, canvasWidth, canvasHeight)
+  ctx.fillRect(0, 0, canvasWidth.value, canvasHeight.value)
 
   // Dessiner la grille
   drawGrid()
@@ -351,17 +379,17 @@ function drawGrid() {
   ctx.strokeStyle = '#333'
   ctx.lineWidth = 1
 
-  for (let x = 0; x <= canvasWidth; x += gridSize) {
+  for (let x = 0; x <= canvasWidth.value; x += gridSize) {
     ctx.beginPath()
     ctx.moveTo(x, 0)
-    ctx.lineTo(x, canvasHeight)
+    ctx.lineTo(x, canvasHeight.value)
     ctx.stroke()
   }
 
-  for (let y = 0; y <= canvasHeight; y += gridSize) {
+  for (let y = 0; y <= canvasHeight.value; y += gridSize) {
     ctx.beginPath()
     ctx.moveTo(0, y)
-    ctx.lineTo(canvasWidth, y)
+    ctx.lineTo(canvasWidth.value, y)
     ctx.stroke()
   }
 }
@@ -558,8 +586,9 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   gap: 2rem;
-  max-width: 600px;
+  max-width: 100%;
   margin: 0 auto;
+  padding: 0 1rem;
 }
 
 /* Interface de jeu */
@@ -618,6 +647,8 @@ onMounted(() => {
   border-radius: 8px;
   background: #000;
   box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+  max-width: 100%;
+  height: auto;
 }
 
 .game-canvas:focus {

@@ -1099,6 +1099,14 @@ onMounted(() => {
     drawScoreChart()
     drawAnalyticsChart()
   })
+  
+  // Redessiner les graphiques lors du redimensionnement
+  window.addEventListener('resize', () => {
+    setTimeout(() => {
+      drawScoreChart()
+      drawAnalyticsChart()
+    }, 100)
+  })
 })
 
 const drawScoreChart = () => {
@@ -1106,7 +1114,30 @@ const drawScoreChart = () => {
   const canvas = document.getElementById('scoreCanvas')
   if (!canvas) return
 
+  // Mettre à jour les dimensions du canvas pour correspondre à sa taille d'affichage
+  const displayWidth = canvas.clientWidth
+  const displayHeight = canvas.clientHeight
+  
+  if (displayWidth > 0 && displayHeight > 0) {
+    // Mise à l'échelle pour haute densité de pixels
+    const pixelRatio = window.devicePixelRatio || 1
+    const scaledWidth = displayWidth * pixelRatio
+    const scaledHeight = displayHeight * pixelRatio
+    
+    if (canvas.width !== scaledWidth || canvas.height !== scaledHeight) {
+      canvas.width = scaledWidth
+      canvas.height = scaledHeight
+    }
+  }
+
   const ctx = canvas.getContext('2d')
+  
+  // Mise à l'échelle du contexte pour haute densité de pixels
+  if (displayWidth > 0 && displayHeight > 0) {
+    ctx.scale(pixelRatio, pixelRatio)
+    ctx.translate(0, 0)
+  }
+  
   const historyData = localStorage.getItem(`${selectedGame.value}-score-history`)
   const history = historyData ? JSON.parse(historyData) : []
 
@@ -1114,14 +1145,14 @@ const drawScoreChart = () => {
     ctx.fillStyle = '#666'
     ctx.font = '16px Arial'
     ctx.textAlign = 'center'
-    ctx.fillText('Aucune donnée à afficher', canvas.width / 2, canvas.height / 2)
+    ctx.fillText('Aucune donnée à afficher', displayWidth / 2, displayHeight / 2)
     return
   }
 
   // Dessiner un graphique simple
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  ctx.clearRect(0, 0, displayWidth, displayHeight)
   ctx.strokeStyle = '#00ff00'
-  ctx.lineWidth = 2
+  ctx.lineWidth = 2 / pixelRatio
 
   const scores = history.slice(-20).map(h => h.score) // 20 derniers scores
   const maxScore = Math.max(...scores)
@@ -1130,8 +1161,8 @@ const drawScoreChart = () => {
 
   ctx.beginPath()
   scores.forEach((score, index) => {
-    const x = (index / (scores.length - 1)) * (canvas.width - 40) + 20
-    const y = canvas.height - 20 - ((score - minScore) / range) * (canvas.height - 40)
+    const x = (index / (scores.length - 1)) * (displayWidth - 40) + 20
+    const y = displayHeight - 20 - ((score - minScore) / range) * (displayHeight - 40)
 
     if (index === 0) {
       ctx.moveTo(x, y)
@@ -1147,8 +1178,42 @@ const drawAnalyticsChart = () => {
   const canvas = document.getElementById('analyticsCanvas')
   if (!canvas) return
 
+  // Mettre à jour les dimensions du canvas pour correspondre à sa taille d'affichage
+  const displayWidth = canvas.clientWidth
+  const displayHeight = canvas.clientHeight
+  
+  if (displayWidth > 0 && displayHeight > 0) {
+    // Mise à l'échelle pour haute densité de pixels
+    const pixelRatio = window.devicePixelRatio || 1
+    const scaledWidth = displayWidth * pixelRatio
+    const scaledHeight = displayHeight * pixelRatio
+    
+    if (canvas.width !== scaledWidth || canvas.height !== scaledHeight) {
+      canvas.width = scaledWidth
+      canvas.height = scaledHeight
+    }
+  }
+
+  const ctx = canvas.getContext('2d')
+  
+  // Mise à l'échelle du contexte pour haute densité de pixels
+  if (displayWidth > 0 && displayHeight > 0) {
+    ctx.scale(pixelRatio, pixelRatio)
+    ctx.translate(0, 0)
+  }
+  
   // Graphique plus détaillé pour le modal
   // (Implementation similaire mais plus complexe)
+  
+  // Exemple de graphique simple pour le moment
+  ctx.clearRect(0, 0, displayWidth, displayHeight)
+  ctx.fillStyle = '#333'
+  ctx.fillRect(0, 0, displayWidth, displayHeight)
+  
+  ctx.fillStyle = '#666'
+  ctx.font = '16px Arial'
+  ctx.textAlign = 'center'
+  ctx.fillText('Données analytiques détaillées', displayWidth / 2, displayHeight / 2)
 }
 </script>
 
@@ -1367,6 +1432,7 @@ const drawAnalyticsChart = () => {
 .score-chart {
   width: 100%;
   height: 200px;
+  min-height: 150px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2110,6 +2176,7 @@ const drawAnalyticsChart = () => {
 .analytics-chart {
   width: 100%;
   height: 300px;
+  min-height: 200px;
   background: rgba(0, 0, 0, 0.3);
   border: 2px solid rgba(0, 255, 0, 0.2);
   border-radius: 12px;
@@ -2256,6 +2323,11 @@ const drawAnalyticsChart = () => {
     padding: 1rem;
   }
 
+  .score-chart,
+  .analytics-chart {
+    height: 150px;
+  }
+
   .table-header,
   .game-row {
     grid-template-columns: 40px 2fr 1fr;
@@ -2334,6 +2406,11 @@ const drawAnalyticsChart = () => {
 
   .stat-value {
     font-size: 1.5rem;
+  }
+
+  .score-chart,
+  .analytics-chart {
+    height: 120px;
   }
 
   .table-header,
